@@ -1,0 +1,19 @@
+# Verify we get a sensible error message when the tests manifest is bad
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+! unity test
+stderr 'failed to validate tests manifest: #Manifest: field `versions` not allowed'
+
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+// Should be upper-case Versions
+versions: ["v0.3.0-alpha6"]

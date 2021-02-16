@@ -1,0 +1,36 @@
+# Verify that we get a sensible error message when a script
+# fails as part of project mode. Note that what we are also testing
+# here is that we don't try to execute the tests against v0.3.0-beta.6
+# which is a dummy CUE version (and hence would fail). i.e. the
+# run of unity should stop after the failing base version, which
+# is PATH
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+! unity test v0.3.0-beta.6
+stderr '\QFAIL: '$WORK'/cue.mod/tests/basic.txt:2: stdout and $WORK/eval.golden differ\E'
+
+-- .unquote --
+cue.mod/tests/basic.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 6

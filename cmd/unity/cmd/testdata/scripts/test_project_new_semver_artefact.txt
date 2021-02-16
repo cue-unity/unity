@@ -1,0 +1,19 @@
+# Verify that we can successfully resolve a new-style semver
+# artefact
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+unity test v0.3.0-beta.6
+
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+-- cue.mod/tests/basic.txt --

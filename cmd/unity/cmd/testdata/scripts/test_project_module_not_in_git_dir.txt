@@ -1,0 +1,18 @@
+# Verify that we present a sensible error in the case that the CUE
+# main module is not contained within the git root
+
+# Initial setup
+cd cue.mod
+git init
+git add -A
+git commit -m 'Initial commit'
+cd $WORK
+
+# Test
+cd cue.mod
+! unity test
+stderr 'main CUE module root "'$WORK'" is not contained within git repository "'$WORK'[/\\]cue.mod"'
+
+-- cue.mod/module.cue --
+module: "mod.com"
+

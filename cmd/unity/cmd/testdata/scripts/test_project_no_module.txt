@@ -1,0 +1,6 @@
+# Verify that we get a sensible error message when running
+# unity in the default project mode but a main module root
+# cannot be determined
+
+! unity test
+stderr 'could not find main CUE module root'

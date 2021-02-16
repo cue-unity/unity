@@ -1,0 +1,24 @@
+# Verify that we get a sensible error message when running
+# in a module that has no tests
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+! unity test
+stderr '\Qno scripts found matching glob: '$WORK'/cue.mod/tests/*.txt\E'
+
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- x.cue --
+package x
+
+x: 5
