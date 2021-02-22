@@ -13,3 +13,4 @@ stderr 'failed to load tests manifest'
 
 -- cue.mod/module.cue --
 module: "mod.com"
+-- cue.mod/tests/dummy.txt --

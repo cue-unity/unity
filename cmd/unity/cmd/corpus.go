@@ -14,6 +14,56 @@
 
 package cmd
 
-func testCorpus(pt *moduleTester, cwd string) error {
-	panic("not implemented yet")
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+func testCorpus(cmd *Command, mt *moduleTester, gitRoot string, versions []string) error {
+	submodConfig := filepath.Join(gitRoot, ".gitmodules")
+	if _, err := os.Stat(submodConfig); err != nil {
+		return fmt.Errorf("failed to find git submodules config file at %s: %v", submodConfig, err)
+	}
+
+	submods, err := gitDir(gitRoot, "config", "--file", ".gitmodules", "--get-regexp", "path")
+	if err != nil {
+		return fmt.Errorf("failed to list git submodules via in %s: %v", gitRoot, err)
+	}
+
+	var modules []*module
+
+	// Format of submods will be one submodule per line, where the path of the submodule relative
+	// to the git root is the second field
+	for _, line := range strings.Split(submods, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Check that the submodule exists locally first, using the existence of .git as that sign
+		fields := strings.Fields(line)
+		projPath := filepath.Join(gitRoot, fields[1])
+		if _, err := os.Stat(filepath.Join(projPath, ".git")); err != nil {
+			continue
+		}
+		mps, err := mt.deriveModulePaths(projPath)
+		if err != nil {
+			return fmt.Errorf("failed to derive modules under %s: %v", projPath, err)
+		}
+		for _, mp := range mps {
+			// TODO: overlay support
+			m, err := mt.newInstance(projPath, mp, nil)
+			if err != nil {
+				return err
+			}
+			modules = append(modules, m)
+		}
+	}
+
+	context := func(m *module) (string, error) {
+		return filepath.Rel(gitRoot, m.root)
+	}
+
+	return testModules(modules, versions, context)
 }

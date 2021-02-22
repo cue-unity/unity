@@ -1,0 +1,73 @@
+# Verify that we get sensible error messages when we get an error
+# within a corpus tests. In particular we verify that we get
+# sensible context
+
+# Setup a
+cd a
+git init
+git add -A
+git commit -m 'Initial commit'
+cd $WORK
+
+# Setup b
+cd b
+git init
+git add -A
+git commit -m 'Initial commit'
+cd $WORK
+
+# Setup corpus
+cd corpus
+git init
+git submodule add $WORK/a a
+git submodule add $WORK/b b
+git add -A
+git commit -am 'Initial commit'
+cd $WORK
+
+# Test
+cd corpus
+! unity test --corpus
+stderr '\QFAIL: b/basic/PATH\E'
+
+-- corpus/README.md --
+-- a/.unquote --
+cue.mod/tests/basic.txt
+-- a/cue.mod/module.cue --
+module: "mod.com"
+
+-- a/cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- a/cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- a/x.cue --
+package x
+
+x: 5
+-- b/.unquote --
+cue.mod/tests/basic.txt
+-- b/cue.mod/module.cue --
+module: "mod.com"
+
+-- b/cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- b/cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- b/x.cue --
+package x
+
+x: 4

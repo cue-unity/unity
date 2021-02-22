@@ -12,6 +12,7 @@ git commit -m 'Initial commit'
 
 # Test
 ! unity test v0.3.0-beta.6
+stderr '\QFAIL: basic/PATH\E'
 stderr '\QFAIL: '$WORK'/cue.mod/tests/basic.txt:2: stdout and $WORK/eval.golden differ\E'
 
 -- .unquote --

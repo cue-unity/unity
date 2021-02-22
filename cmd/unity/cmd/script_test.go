@@ -135,10 +135,11 @@ func processSpecialFiles(e *testscript.Env) (err error) {
 	h.walk(specialUnquote, func(path string) {
 		files := h.speciallines(h.read(path))
 		for _, fn := range files {
-			c := h.read(fn)
+			f := filepath.Join(filepath.Dir(path), fn)
+			c := h.read(f)
 			u, err := txtar.Unquote([]byte(c))
 			h.check(err, "failed to unquote %s: %v", fn, err)
-			h.write(fn, string(u))
+			h.write(f, string(u))
 		}
 	})
 	return nil

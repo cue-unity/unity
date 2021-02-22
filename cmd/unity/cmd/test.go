@@ -49,7 +49,7 @@ Need to document this command
 	cmd.Flags().Bool(string(flagUpdate), false, "update files within tests when a cmp fails")
 	cmd.Flags().Bool(string(flagCorpus), false, "run tests for the submodules of the git repository that contains the working directory.")
 	cmd.Flags().String(string(flagRun), ".", "run only those tests matching the regular expression.")
-	cmd.Flags().StringP(string(flagDir), "d", ".", "search path for the module or corpus")
+	cmd.Flags().StringP(string(flagDir), "d", ".", "search path for the project or corpus")
 	cmd.Flags().BoolP(string(flagVerbose), "v", false, "verbose output; log all script runs")
 	cmd.Flags().Bool(string(flagNoPath), false, "do not allow CUE version PATH. Useful for CI")
 	return cmd
@@ -78,9 +78,7 @@ func testDef(c *Command, args []string) error {
 	var r cue.Runtime
 	dir := flagDir.String(c)
 
-	// Find the git root. Run this from the working directory in case
-	// the CUE main module is not contained within a git directory
-	// (which we check below)
+	// Find the git root
 	gitRoot, err := gitDir(dir, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return fmt.Errorf("failed to determine git root: %v", err)
@@ -97,13 +95,13 @@ func testDef(c *Command, args []string) error {
 		return fmt.Errorf("failed to resolve #Manifest definition: %v", err)
 	}
 
-	pt := newModuleTester(vr, &r, manifestDef)
-	pt.verbose = flagVerbose.Bool(c)
+	mt := newModuleTester(vr, &r, manifestDef)
+	mt.verbose = flagVerbose.Bool(c)
 
 	if flagCorpus.Bool(c) {
-		return testCorpus(pt, dir)
+		return testCorpus(c, mt, gitRoot, args)
 	}
-	err = testModule(pt, gitRoot, args)
+	err = testProject(c, mt, gitRoot, args)
 	if errors.Is(err, errTestFail) {
 		// we will have printed everything we need to
 		exit()
