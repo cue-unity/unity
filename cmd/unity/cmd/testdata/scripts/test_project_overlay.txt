@@ -1,0 +1,39 @@
+# Verify that we can run unity test in default (module) mode
+# using an overlay for the manifest for that project
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+unity test --overlay overlay
+! stdout .+
+
+-- .unquote --
+overlay/basic1.txt
+overlay/basic2.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- overlay/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- overlay/basic1.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- overlay/basic2.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5

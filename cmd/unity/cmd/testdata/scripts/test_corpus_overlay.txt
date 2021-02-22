@@ -1,0 +1,74 @@
+# Verify that corpus tests can also use --overlay
+#
+# The general setup here is that we create to projects, a and b which are
+# identical, but for fact that b does not have a test manifest. Then have
+# a third directory, corpus, that adds a and b as submodules.
+
+# Setup a
+cd a
+git init
+git add -A
+git commit -m 'Initial commit'
+cd $WORK
+
+# Setup b
+cd b
+git init
+git add -A
+git commit -m 'Initial commit'
+cd $WORK
+
+# Setup corpus
+cd corpus
+git init
+git submodule add $WORK/a a
+git submodule add $WORK/b b
+git add -A
+git commit -am 'Initial commit'
+cd $WORK
+
+# Test
+cd corpus
+unity test --corpus --overlay $WORK/overlay
+
+-- corpus/README.md --
+-- a/.unquote --
+cue.mod/tests/basic.txt
+-- a/cue.mod/module.cue --
+module: "mod.com"
+
+-- a/cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- a/cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- a/x.cue --
+package x
+
+x: 5
+-- b/cue.mod/module.cue --
+module: "mod.com"
+
+-- b/x.cue --
+package x
+
+x: 5
+-- overlay/b/.unquote --
+basic.txt
+-- overlay/b/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- overlay/b/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
