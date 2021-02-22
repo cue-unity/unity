@@ -50,30 +50,18 @@ var (
 	errTestFail = errors.New("tests failed")
 )
 
-// moduleContext provides path-like context for a given module when
-// printing information relating to that module in test-like output
-type moduleContext func(*module) (string, error)
-
-func testProject(cmd *Command, mt *moduleTester, gitRoot string, versions []string) error {
-	mps, err := mt.deriveModulePaths(gitRoot)
+func testProject(cmd *Command, mt *moduleTester, versions []string) error {
+	modules, err := mt.deriveModules(mt.gitRoot)
 	if err != nil {
-		return err
-	}
-	var modules []*module
-	for _, mp := range mps {
-		m, err := mt.newInstance(gitRoot, mp, nil)
-		if err != nil {
-			return err
-		}
-		modules = append(modules, m)
+		return fmt.Errorf("failed to derive modules under %s: %v", mt.gitRoot, err)
 	}
 	if len(modules) == 0 {
 		return fmt.Errorf("could not find any CUE module roots")
 	}
-	return testModules(modules, versions, nil)
+	return mt.test(modules, versions)
 }
 
-func testModules(modules []*module, versions []string, context moduleContext) error {
+func (mt *moduleTester) test(modules []*module, versions []string) error {
 	done := make(map[*module]map[string]bool)
 
 	// At this stage, we know that toTest is a list of
@@ -106,7 +94,7 @@ func testModules(modules []*module, versions []string, context moduleContext) er
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					res.err = m.run(res.log, v, context)
+					res.err = mt.run(m, res.log, v)
 				}()
 			}
 		}
@@ -158,15 +146,28 @@ type moduleTester struct {
 	// semaphore controls concurrency levels in projet tests
 	semaphore chan struct{}
 
+	// gitRoot is the absolute path to the git root used as the context
+	// for testing modules. In -corpus mode this will be the git top level
+	// of the repo that contains the git submodules. In project mode (default)
+	// this will be the git top level of the project repository that will
+	// be searched for CUE modules.
+	gitRoot string
+
+	// overlayDir is a directory that might contain overlays for a
+	// given module.
+	overlayDir string
+
 	verbose bool
 }
 
-func newModuleTester(vr *versionResolver, r *cue.Runtime, manifestDef cue.Value) *moduleTester {
+func newModuleTester(gitRoot, overlayDir string, vr *versionResolver, r *cue.Runtime, manifestDef cue.Value) *moduleTester {
 	sem := make(chan struct{}, runtime.NumCPU())
 	for i := 0; i < runtime.NumCPU(); i++ {
 		sem <- struct{}{}
 	}
 	mt := &moduleTester{
+		overlayDir:      overlayDir,
+		gitRoot:         gitRoot,
 		versionResolver: vr,
 		runtime:         r,
 		manifestDef:     manifestDef,
@@ -187,19 +188,22 @@ func (mt *moduleTester) limit() func() {
 
 // newInstance creates a module instances rooted in the CUE module that is dir.
 // A precondition of this function is that dir must be contained in gitRoot.
-func (mt *moduleTester) newInstance(gitRoot, dir string, overlay map[string]load.Source) (*module, error) {
+func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	mod := load.Instances([]string{"."}, &load.Config{Dir: dir})[0]
 	if mod.Module == "" {
 		return nil, fmt.Errorf("could not find main CUE module root")
 	}
 
-	// Verify that the CUE main module exists within the git dir
-	relPath, err := filepath.Rel(gitRoot, mod.Root)
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine main module root relative to git root: %v", err)
+	// We know that dir is contained within gitRoot. Furthermore, that gitRoot is
+	// contained within mt.gitRoot. Store the relative paths on the resulting
+	// module for convenience
+	testerGitRel := dir[len(mt.gitRoot):]
+	if strings.HasPrefix(testerGitRel, string(os.PathSeparator)) {
+		testerGitRel = strings.TrimPrefix(testerGitRel, string(os.PathSeparator))
 	}
-	if strings.HasPrefix(relPath, "..") {
-		return nil, fmt.Errorf("main CUE module root %q is not contained within git repository %q", mod.Root, gitRoot)
+	gitRel := dir[len(gitRoot):]
+	if strings.HasPrefix(gitRel, string(os.PathSeparator)) {
+		gitRel = strings.TrimPrefix(gitRel, string(os.PathSeparator))
 	}
 
 	// Until we support a "dirty" mode we need to bail on a non-porcelain
@@ -214,9 +218,17 @@ func (mt *moduleTester) newInstance(gitRoot, dir string, overlay map[string]load
 
 	// Verify this is a valid module by loading the manifest
 	manifestDir := filepath.Join(mod.Root, "cue.mod", packageTests)
+	// Now see if there is an overlay for this path
+	// Only if the tests directory exists do we attempt to
+	// create a module instance
+	if mt.overlayDir != "" {
+		overlayDir := filepath.Join(mt.overlayDir, testerGitRel)
+		if fi, err := os.Stat(overlayDir); err == nil && fi.IsDir() {
+			manifestDir = overlayDir
+		}
+	}
 	manifestInst := load.Instances([]string{"."}, &load.Config{
-		Dir:     manifestDir,
-		Overlay: overlay,
+		Dir: manifestDir,
 	})
 	manifestInput, err := mt.runtime.Build(manifestInst[0])
 	if err != nil {
@@ -263,17 +275,18 @@ func (mt *moduleTester) newInstance(gitRoot, dir string, overlay map[string]load
 	}
 
 	res := &module{
-		tester:      mt,
-		gitRoot:     gitRoot,
-		root:        mod.Root,
-		relPath:     relPath,
-		manifestDir: manifestDir,
-		manifest:    manifest,
+		tester:        mt,
+		gitRoot:       gitRoot,
+		root:          mod.Root,
+		testerRelPath: testerGitRel,
+		relPath:       gitRel,
+		manifestDir:   manifestDir,
+		manifest:      manifest,
 	}
 	return res, nil
 }
 
-func (mt *moduleTester) deriveModulePaths(dir string) (modules []string, err error) {
+func (mt *moduleTester) deriveModules(dir string) (modules []*module, err error) {
 	err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -284,12 +297,12 @@ func (mt *moduleTester) deriveModulePaths(dir string) (modules []string, err err
 		if !info.IsDir() {
 			return fmt.Errorf("%s is not a directory", path)
 		}
-		// Only if the tests directory exists do we attempt to
-		// create a module instance
-		if _, err := os.Stat(filepath.Join(path, packageTests)); err != nil {
-			return nil
+		modDir := filepath.Dir(path)
+		m, err := mt.newInstance(dir, modDir)
+		if err != nil {
+			return fmt.Errorf("failed to create module instance at %s: %v", modDir, err)
 		}
-		modules = append(modules, path)
+		modules = append(modules, m)
 		return nil
 	})
 	return
@@ -305,8 +318,12 @@ type module struct {
 	// contains modroot.
 	gitRoot string
 
+	// testerRelPath is a convenience calculation of modpath relative to the
+	// gitRoot of the moduleTester that created the module
+	testerRelPath string
+
 	// relPath is a convenience calculation of modpath
-	// relative to gitroot
+	// relative to gitRoot (that is the project's git root)
 	relPath string
 
 	// manifestDir is the absolute path to the manifest
@@ -321,15 +338,7 @@ type module struct {
 	tester *moduleTester
 }
 
-func (m *module) run(log *bytes.Buffer, version string, context moduleContext) (err error) {
-	var modContext []string
-	if context != nil {
-		ctxt, err := context(m)
-		if err != nil {
-			return fmt.Errorf("failed to derive context: %v", err)
-		}
-		modContext = []string{ctxt}
-	}
+func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err error) {
 	cuePath, err := m.tester.versionResolver.resolve(version)
 	if err != nil {
 		return err
@@ -380,7 +389,7 @@ func (m *module) run(log *bytes.Buffer, version string, context moduleContext) (
 		return lhs.name < rhs.name
 	})
 	for _, c := range r.children {
-		modContext = append(modContext, c.name, version)
+		context := mt.buildContext(m, c.name, version)
 		if !c.failed && !c.verbose {
 			continue
 		}
@@ -388,12 +397,21 @@ func (m *module) run(log *bytes.Buffer, version string, context moduleContext) (
 		if c.failed {
 			passFail = "FAIL"
 		}
-		fmt.Fprintf(log, "--- %s: %s\n%s", passFail, path.Join(modContext...), indent(c.log, "\t"))
+		fmt.Fprintf(log, "--- %s: %s\n%s", passFail, context, indent(c.log, "\t"))
 	}
 	if r.failed {
 		return errTestFail
 	}
 	return nil
+}
+
+func (mt *moduleTester) buildContext(m *module, vs ...string) string {
+	var context []string
+	if m.testerRelPath != "" {
+		context = append(context, m.testerRelPath)
+	}
+	context = append(context, vs...)
+	return path.Join(context...)
 }
 
 // indent returns the indented string version of b

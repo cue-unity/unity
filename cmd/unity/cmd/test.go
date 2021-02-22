@@ -16,6 +16,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"cuelang.org/go/cue"
@@ -32,6 +34,7 @@ const (
 	flagDir     flagName = "dir"
 	flagVerbose flagName = "verbose"
 	flagNoPath  flagName = "nopath"
+	flagOverlay flagName = "overlay"
 )
 
 // newTestCmd creates a new test command
@@ -52,6 +55,7 @@ Need to document this command
 	cmd.Flags().StringP(string(flagDir), "d", ".", "search path for the project or corpus")
 	cmd.Flags().BoolP(string(flagVerbose), "v", false, "verbose output; log all script runs")
 	cmd.Flags().Bool(string(flagNoPath), false, "do not allow CUE version PATH. Useful for CI")
+	cmd.Flags().String(string(flagOverlay), "", "the directory from which to source overlays")
 	return cmd
 }
 
@@ -95,13 +99,30 @@ func testDef(c *Command, args []string) error {
 		return fmt.Errorf("failed to resolve #Manifest definition: %v", err)
 	}
 
-	mt := newModuleTester(vr, &r, manifestDef)
+	// Verify that the overlay directory, if provided, exists
+	overlayDir := flagOverlay.String(c)
+	if overlayDir != "" {
+		fi, err := os.Stat(overlayDir)
+		if err != nil {
+			return fmt.Errorf("failed to find overlay directory %s: %v", overlayDir, err)
+		}
+		if !fi.IsDir() {
+			return fmt.Errorf("overlay directory %s is not a directory", overlayDir)
+		}
+		abs, err := filepath.Abs(overlayDir)
+		if err != nil {
+			return fmt.Errorf("failed to make path %s absolute: %v", overlayDir, err)
+		}
+		overlayDir = abs
+	}
+
+	mt := newModuleTester(gitRoot, overlayDir, vr, &r, manifestDef)
 	mt.verbose = flagVerbose.Bool(c)
 
 	if flagCorpus.Bool(c) {
-		return testCorpus(c, mt, gitRoot, args)
+		return testCorpus(c, mt, args)
 	}
-	err = testProject(c, mt, gitRoot, args)
+	err = testProject(c, mt, args)
 	if errors.Is(err, errTestFail) {
 		// we will have printed everything we need to
 		exit()

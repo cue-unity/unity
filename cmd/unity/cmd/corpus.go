@@ -21,15 +21,15 @@ import (
 	"strings"
 )
 
-func testCorpus(cmd *Command, mt *moduleTester, gitRoot string, versions []string) error {
-	submodConfig := filepath.Join(gitRoot, ".gitmodules")
+func testCorpus(cmd *Command, mt *moduleTester, versions []string) error {
+	submodConfig := filepath.Join(mt.gitRoot, ".gitmodules")
 	if _, err := os.Stat(submodConfig); err != nil {
 		return fmt.Errorf("failed to find git submodules config file at %s: %v", submodConfig, err)
 	}
 
-	submods, err := gitDir(gitRoot, "config", "--file", ".gitmodules", "--get-regexp", "path")
+	submods, err := gitDir(mt.gitRoot, "config", "--file", ".gitmodules", "--get-regexp", "path")
 	if err != nil {
-		return fmt.Errorf("failed to list git submodules via in %s: %v", gitRoot, err)
+		return fmt.Errorf("failed to list git submodules via in %s: %v", mt.gitRoot, err)
 	}
 
 	var modules []*module
@@ -43,27 +43,19 @@ func testCorpus(cmd *Command, mt *moduleTester, gitRoot string, versions []strin
 		}
 		// Check that the submodule exists locally first, using the existence of .git as that sign
 		fields := strings.Fields(line)
-		projPath := filepath.Join(gitRoot, fields[1])
+		projPath := filepath.Join(mt.gitRoot, fields[1])
 		if _, err := os.Stat(filepath.Join(projPath, ".git")); err != nil {
 			continue
 		}
-		mps, err := mt.deriveModulePaths(projPath)
+		ms, err := mt.deriveModules(projPath)
 		if err != nil {
 			return fmt.Errorf("failed to derive modules under %s: %v", projPath, err)
 		}
-		for _, mp := range mps {
-			// TODO: overlay support
-			m, err := mt.newInstance(projPath, mp, nil)
-			if err != nil {
-				return err
-			}
-			modules = append(modules, m)
+		if len(ms) == 0 {
+			return fmt.Errorf("could not find any CUE module roots under %s", projPath)
 		}
+		modules = append(modules, ms...)
 	}
 
-	context := func(m *module) (string, error) {
-		return filepath.Rel(gitRoot, m.root)
-	}
-
-	return testModules(modules, versions, context)
+	return mt.test(modules, versions)
 }

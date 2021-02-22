@@ -27,4 +27,4 @@ Versions: ["PATH"]
 >-- repo/a.txt --
 
 -- stderr.golden --
-$WORK/cue.mod/tests/basic.txt contains invalid file path repo
+failed to derive modules under $WORK: failed to create module instance at $WORK: $WORK/cue.mod/tests/basic.txt contains invalid file path repo
