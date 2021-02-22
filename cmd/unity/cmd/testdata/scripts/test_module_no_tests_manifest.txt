@@ -1,5 +1,5 @@
 # Verify that we get a sensible error message when running
-# unity int he default project mode, within a CUE main module
+# unity int he default module mode, within a CUE main module
 # context, but where the tests manifest is missing
 
 # Initial setup

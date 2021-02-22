@@ -1,5 +1,5 @@
 # Verify that we get a sensible error message when a script
-# fails as part of project mode. Note that what we are also testing
+# fails as part of module mode. Note that what we are also testing
 # here is that we don't try to execute the tests against v0.3.0-beta.6
 # which is a dummy CUE version (and hence would fail). i.e. the
 # run of unity should stop after the failing base version, which

@@ -14,6 +14,6 @@
 
 package cmd
 
-func testCorpus(pt *projectTester, cwd string) error {
+func testCorpus(pt *moduleTester, cwd string) error {
 	panic("not implemented yet")
 }

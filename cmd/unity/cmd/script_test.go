@@ -91,6 +91,7 @@ func TestScripts(t *testing.T) {
 				homeDirName,
 			}, "\n"))
 			h.git("config", "--global", "core.excludesfile", filepath.Join(home, ".gitignore"))
+			h.git("config", "--global", "init.defaultBranch", "main")
 
 			// Pre-script setup via special files
 			if err := processSpecialFiles(e); err != nil {

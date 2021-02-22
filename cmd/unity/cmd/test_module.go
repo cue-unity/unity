@@ -17,6 +17,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -35,7 +36,7 @@ import (
 
 const (
 	// repoDir is the directory within a testscript Workdir to which
-	// we create a worktree copy of the project under test. The
+	// we create a worktree copy of the module under test. The
 	// initial working directory for the CUE module under test is
 	// then $WORK/repo/path/to/mod
 	repoDir = "repo"
@@ -45,11 +46,34 @@ var (
 	errTestFail = errors.New("tests failed")
 )
 
-func testProject(pt *projectTester, dir string, versions []string) error {
-	p, err := pt.newInstance(dir)
+func testModule(pt *moduleTester, gitRoot string, versions []string) error {
+	// Walk to find the modules within the gitRoot
+	var modules []*module
+	err := filepath.Walk(gitRoot, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() != "cue.mod" {
+			return nil
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("%s is not a directory", path)
+		}
+		p, err := pt.newInstance(gitRoot, filepath.Dir(path))
+		if err != nil {
+			return err
+		}
+		modules = append(modules, p)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
+
+	if len(modules) == 0 {
+		return fmt.Errorf("could not find any CUE module roots")
+	}
+
 	done := make(map[string]bool)
 
 	// At this stage, we know that toTest is a list of
@@ -59,28 +83,32 @@ func testProject(pt *projectTester, dir string, versions []string) error {
 		err error
 	}
 	var tested []*testResult
-	verify := func(toTest []string) {
+	verify := func(whatToTest func(*module) []string) {
 		var wg sync.WaitGroup
-		for _, v := range toTest {
-			v := v
-			if done[v] {
-				continue
+		for _, p := range modules {
+			p := p
+			toTest := whatToTest(p)
+			for _, v := range toTest {
+				v := v
+				if done[v] {
+					continue
+				}
+				done[v] = true
+				res := &testResult{
+					log: new(bytes.Buffer),
+				}
+				tested = append(tested, res)
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					res.err = p.run(res.log, v)
+				}()
 			}
-			done[v] = true
-			res := &testResult{
-				log: new(bytes.Buffer),
-			}
-			tested = append(tested, res)
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				res.err = p.run(res.log, v)
-			}()
 		}
 		wg.Wait()
 	}
 	// First check the base versions
-	verify(p.manifest.Versions)
+	verify(func(p *module) []string { return p.manifest.Versions })
 	sawError := false
 	for _, tr := range tested {
 		if tr.err != nil {
@@ -88,8 +116,8 @@ func testProject(pt *projectTester, dir string, versions []string) error {
 		}
 	}
 	// Only run the additional versions if we passed the base version
-	if !sawError {
-		verify(versions)
+	if !sawError && len(versions) > 0 {
+		verify(func(*module) []string { return versions })
 	}
 
 	// Subjective error printing. Log errors that are non errTestFail
@@ -113,7 +141,7 @@ func testProject(pt *projectTester, dir string, versions []string) error {
 	return nil
 }
 
-type projectTester struct {
+type moduleTester struct {
 	// versionResolver is the helper to resolve CUE versions for testing
 	versionResolver *versionResolver
 
@@ -128,12 +156,12 @@ type projectTester struct {
 	verbose bool
 }
 
-func newProjectTester(vr *versionResolver, r *cue.Runtime, manifestDef cue.Value) *projectTester {
+func newModuleTester(vr *versionResolver, r *cue.Runtime, manifestDef cue.Value) *moduleTester {
 	sem := make(chan struct{}, runtime.NumCPU())
 	for i := 0; i < runtime.NumCPU(); i++ {
 		sem <- struct{}{}
 	}
-	pt := &projectTester{
+	pt := &moduleTester{
 		versionResolver: vr,
 		runtime:         r,
 		manifestDef:     manifestDef,
@@ -145,27 +173,20 @@ func newProjectTester(vr *versionResolver, r *cue.Runtime, manifestDef cue.Value
 // limit returns blocks until a concurrency slot is available
 // for execution, and then returns a function which can be used
 // in a defer to release the semaphore.
-func (pt *projectTester) limit() func() {
+func (pt *moduleTester) limit() func() {
 	<-pt.semaphore
 	return func() {
 		pt.semaphore <- struct{}{}
 	}
 }
 
-func (pt *projectTester) newInstance(dir string) (*project, error) {
+// newInstance creates a module instances rooted in the CUE module that is dir.
+// A precondition of this function is that dir must be contained in gitRoot.
+func (pt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	mod := load.Instances([]string{"."}, &load.Config{Dir: dir})[0]
 	if mod.Module == "" {
 		return nil, fmt.Errorf("could not find main CUE module root")
 	}
-
-	// Find the git root. Run this from the working directory in case
-	// the CUE main module is not contained within a git directory
-	// (which we check below)
-	gitRoot, err := git("rev-parse", "--show-toplevel")
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine git root: %v", err)
-	}
-	gitRoot = strings.TrimSpace(gitRoot)
 
 	// Verify that the CUE main module exists within the git dir
 	relPath, err := filepath.Rel(gitRoot, mod.Root)
@@ -186,7 +207,7 @@ func (pt *projectTester) newInstance(dir string) (*project, error) {
 		return nil, fmt.Errorf("working tree is dirty; not currently supported: %v", status)
 	}
 
-	// Verify this is a valid project by loading the manifest
+	// Verify this is a valid module by loading the manifest
 	manifestDir := filepath.Join(mod.Root, "cue.mod", "tests")
 	manifestInst := load.Instances([]string{"."}, &load.Config{Dir: manifestDir})
 	manifestInput, err := pt.runtime.Build(manifestInst[0])
@@ -233,7 +254,8 @@ func (pt *projectTester) newInstance(dir string) (*project, error) {
 		}
 	}
 
-	res := &project{
+	res := &module{
+		dir:         dir,
 		tester:      pt,
 		gitRoot:     gitRoot,
 		modRoot:     mod.Root,
@@ -244,7 +266,11 @@ func (pt *projectTester) newInstance(dir string) (*project, error) {
 	return res, nil
 }
 
-type project struct {
+// module represents a CUE module under test
+type module struct {
+	// dir is the root of the CUE module under test
+	dir string
+
 	// modRoot is the absolute path to the module root
 	// The CUE module will be contained within gitroot
 	modRoot string
@@ -261,15 +287,15 @@ type project struct {
 	// directory within a CUE module
 	manifestDir string
 
-	// manifest is the decoded manifest for the project
+	// manifest is the decoded manifest for the module
 	manifest unity.Manifest
 
-	// tester is the projectTester instance that created
-	// this project instance
-	tester *projectTester
+	// tester is the moduleTester instance that created
+	// this module instance
+	tester *moduleTester
 }
 
-func (p *project) run(log *bytes.Buffer, version string) (err error) {
+func (p *module) run(log *bytes.Buffer, version string) (err error) {
 	path, err := p.tester.versionResolver.resolve(version)
 	if err != nil {
 		return err

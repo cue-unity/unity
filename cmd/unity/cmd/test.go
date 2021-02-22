@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"strings"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
@@ -42,18 +42,14 @@ func newTestCmd(c *Command) *cobra.Command {
 		Use:   "test",
 		Short: "test the CUE corpus",
 		Long: `
-* document -update and the conditions under which this applies
-* document -project
-* document -run, explaining how when run against a corpus the regex
-  matches the project in the path as well, whereas with -project it
-  only matches the testname
+Need to document this command
 `,
 		RunE: mkRunE(c, testDef),
 	}
 	cmd.Flags().Bool(string(flagUpdate), false, "update files within tests when a cmp fails")
-	cmd.Flags().Bool(string(flagCorpus), false, "run tests for the project containing the working directory.")
+	cmd.Flags().Bool(string(flagCorpus), false, "run tests for the submodules of the git repository that contains the working directory.")
 	cmd.Flags().String(string(flagRun), ".", "run only those tests matching the regular expression.")
-	cmd.Flags().StringP(string(flagDir), "d", ".", "search path for the project or corpus")
+	cmd.Flags().StringP(string(flagDir), "d", ".", "search path for the module or corpus")
 	cmd.Flags().BoolP(string(flagVerbose), "v", false, "verbose output; log all script runs")
 	cmd.Flags().Bool(string(flagNoPath), false, "do not allow CUE version PATH. Useful for CI")
 	return cmd
@@ -78,15 +74,18 @@ func testDef(c *Command, args []string) error {
 	if err := eg.Wait(); err != nil {
 		return fmt.Errorf("failed to pre-resolve versions %v: %v", args, err)
 	}
-	dir := flagDir.String(c)
-	fi, err := os.Stat(dir)
-	if err != nil {
-		return fmt.Errorf("failed to stat path %s: %v", dir, err)
-	}
-	if !fi.IsDir() {
-		return fmt.Errorf("path %v is not a directory", dir)
-	}
+
 	var r cue.Runtime
+	dir := flagDir.String(c)
+
+	// Find the git root. Run this from the working directory in case
+	// the CUE main module is not contained within a git directory
+	// (which we check below)
+	gitRoot, err := gitDir(dir, "rev-parse", "--show-toplevel")
+	if err != nil {
+		return fmt.Errorf("failed to determine git root: %v", err)
+	}
+	gitRoot = strings.TrimSpace(gitRoot)
 
 	// Load the #Tests definition
 	insts, err := r.Unmarshal(unity.InstanceData)
@@ -98,13 +97,13 @@ func testDef(c *Command, args []string) error {
 		return fmt.Errorf("failed to resolve #Manifest definition: %v", err)
 	}
 
-	pt := newProjectTester(vr, &r, manifestDef)
+	pt := newModuleTester(vr, &r, manifestDef)
 	pt.verbose = flagVerbose.Bool(c)
 
 	if flagCorpus.Bool(c) {
 		return testCorpus(pt, dir)
 	}
-	err = testProject(pt, dir, args)
+	err = testModule(pt, gitRoot, args)
 	if errors.Is(err, errTestFail) {
 		// we will have printed everything we need to
 		exit()
