@@ -40,41 +40,41 @@ const (
 	// initial working directory for the CUE module under test is
 	// then $WORK/repo/path/to/mod
 	repoDir = "repo"
+
+	// packageTests is the name of the package within which we define
+	// the module test manifest and the testscript files
+	packageTests = "tests"
 )
 
 var (
 	errTestFail = errors.New("tests failed")
 )
 
-func testModule(pt *moduleTester, gitRoot string, versions []string) error {
-	// Walk to find the modules within the gitRoot
-	var modules []*module
-	err := filepath.Walk(gitRoot, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.Name() != "cue.mod" {
-			return nil
-		}
-		if !info.IsDir() {
-			return fmt.Errorf("%s is not a directory", path)
-		}
-		p, err := pt.newInstance(gitRoot, filepath.Dir(path))
-		if err != nil {
-			return err
-		}
-		modules = append(modules, p)
-		return nil
-	})
+// moduleContext provides path-like context for a given module when
+// printing information relating to that module in test-like output
+type moduleContext func(*module) (string, error)
+
+func testProject(cmd *Command, mt *moduleTester, gitRoot string, versions []string) error {
+	mps, err := mt.deriveModulePaths(gitRoot)
 	if err != nil {
 		return err
 	}
-
+	var modules []*module
+	for _, mp := range mps {
+		m, err := mt.newInstance(gitRoot, mp, nil)
+		if err != nil {
+			return err
+		}
+		modules = append(modules, m)
+	}
 	if len(modules) == 0 {
 		return fmt.Errorf("could not find any CUE module roots")
 	}
+	return testModules(modules, versions, nil)
+}
 
-	done := make(map[string]bool)
+func testModules(modules []*module, versions []string, context moduleContext) error {
+	done := make(map[*module]map[string]bool)
 
 	// At this stage, we know that toTest is a list of
 	// valid and fully resolved versions to test
@@ -85,15 +85,20 @@ func testModule(pt *moduleTester, gitRoot string, versions []string) error {
 	var tested []*testResult
 	verify := func(whatToTest func(*module) []string) {
 		var wg sync.WaitGroup
-		for _, p := range modules {
-			p := p
-			toTest := whatToTest(p)
+		for _, m := range modules {
+			m := m
+			mdone := done[m]
+			if mdone == nil {
+				mdone = make(map[string]bool)
+				done[m] = mdone
+			}
+			toTest := whatToTest(m)
 			for _, v := range toTest {
 				v := v
-				if done[v] {
+				if mdone[v] {
 					continue
 				}
-				done[v] = true
+				mdone[v] = true
 				res := &testResult{
 					log: new(bytes.Buffer),
 				}
@@ -101,14 +106,14 @@ func testModule(pt *moduleTester, gitRoot string, versions []string) error {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					res.err = p.run(res.log, v)
+					res.err = m.run(res.log, v, context)
 				}()
 			}
 		}
 		wg.Wait()
 	}
 	// First check the base versions
-	verify(func(p *module) []string { return p.manifest.Versions })
+	verify(func(m *module) []string { return m.manifest.Versions })
 	sawError := false
 	for _, tr := range tested {
 		if tr.err != nil {
@@ -161,28 +166,28 @@ func newModuleTester(vr *versionResolver, r *cue.Runtime, manifestDef cue.Value)
 	for i := 0; i < runtime.NumCPU(); i++ {
 		sem <- struct{}{}
 	}
-	pt := &moduleTester{
+	mt := &moduleTester{
 		versionResolver: vr,
 		runtime:         r,
 		manifestDef:     manifestDef,
 		semaphore:       sem,
 	}
-	return pt
+	return mt
 }
 
 // limit returns blocks until a concurrency slot is available
 // for execution, and then returns a function which can be used
 // in a defer to release the semaphore.
-func (pt *moduleTester) limit() func() {
-	<-pt.semaphore
+func (mt *moduleTester) limit() func() {
+	<-mt.semaphore
 	return func() {
-		pt.semaphore <- struct{}{}
+		mt.semaphore <- struct{}{}
 	}
 }
 
 // newInstance creates a module instances rooted in the CUE module that is dir.
 // A precondition of this function is that dir must be contained in gitRoot.
-func (pt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
+func (mt *moduleTester) newInstance(gitRoot, dir string, overlay map[string]load.Source) (*module, error) {
 	mod := load.Instances([]string{"."}, &load.Config{Dir: dir})[0]
 	if mod.Module == "" {
 		return nil, fmt.Errorf("could not find main CUE module root")
@@ -208,15 +213,18 @@ func (pt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	}
 
 	// Verify this is a valid module by loading the manifest
-	manifestDir := filepath.Join(mod.Root, "cue.mod", "tests")
-	manifestInst := load.Instances([]string{"."}, &load.Config{Dir: manifestDir})
-	manifestInput, err := pt.runtime.Build(manifestInst[0])
+	manifestDir := filepath.Join(mod.Root, "cue.mod", packageTests)
+	manifestInst := load.Instances([]string{"."}, &load.Config{
+		Dir:     manifestDir,
+		Overlay: overlay,
+	})
+	manifestInput, err := mt.runtime.Build(manifestInst[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to load tests manifest from %s: %v", manifestDir, err)
 	}
 
 	// Validate against the embedded #Manifest definition
-	manifestVal := pt.manifestDef.Unify(manifestInput.Value())
+	manifestVal := mt.manifestDef.Unify(manifestInput.Value())
 	if err := manifestVal.Validate(cue.Concrete(true)); err != nil {
 		return nil, fmt.Errorf("failed to validate tests manifest: %v", err)
 	}
@@ -229,7 +237,7 @@ func (pt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	//
 	// TODO: make concurrent
 	for _, v := range manifest.Versions {
-		_, err := pt.versionResolver.resolve(v)
+		_, err := mt.versionResolver.resolve(v)
 		if err != nil {
 			return nil, err
 		}
@@ -255,10 +263,9 @@ func (pt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	}
 
 	res := &module{
-		dir:         dir,
-		tester:      pt,
+		tester:      mt,
 		gitRoot:     gitRoot,
-		modRoot:     mod.Root,
+		root:        mod.Root,
 		relPath:     relPath,
 		manifestDir: manifestDir,
 		manifest:    manifest,
@@ -266,14 +273,33 @@ func (pt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	return res, nil
 }
 
+func (mt *moduleTester) deriveModulePaths(dir string) (modules []string, err error) {
+	err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() != "cue.mod" {
+			return nil
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("%s is not a directory", path)
+		}
+		// Only if the tests directory exists do we attempt to
+		// create a module instance
+		if _, err := os.Stat(filepath.Join(path, packageTests)); err != nil {
+			return nil
+		}
+		modules = append(modules, path)
+		return nil
+	})
+	return
+}
+
 // module represents a CUE module under test
 type module struct {
-	// dir is the root of the CUE module under test
-	dir string
-
-	// modRoot is the absolute path to the module root
+	// root is the absolute path to the module root
 	// The CUE module will be contained within gitroot
-	modRoot string
+	root string
 
 	// gitRoot is the absolute path to the git root that
 	// contains modroot.
@@ -295,33 +321,41 @@ type module struct {
 	tester *moduleTester
 }
 
-func (p *module) run(log *bytes.Buffer, version string) (err error) {
-	path, err := p.tester.versionResolver.resolve(version)
+func (m *module) run(log *bytes.Buffer, version string, context moduleContext) (err error) {
+	var modContext []string
+	if context != nil {
+		ctxt, err := context(m)
+		if err != nil {
+			return fmt.Errorf("failed to derive context: %v", err)
+		}
+		modContext = []string{ctxt}
+	}
+	cuePath, err := m.tester.versionResolver.resolve(version)
 	if err != nil {
 		return err
 	}
 	params := testscript.Params{
-		Dir: p.manifestDir,
+		Dir: m.manifestDir,
 		Setup: func(e *testscript.Env) error {
 			// Limit concurrency across all testscript runs
-			e.Defer(p.tester.limit())
+			e.Defer(m.tester.limit())
 
 			// Make a copy of the current state of the git repo into
 			// into the repo subdirectory of the workdir
 			modCopy := filepath.Join(e.WorkDir, repoDir)
-			_, err = gitDir(p.gitRoot, "worktree", "add", "-d", modCopy)
+			_, err = gitDir(m.gitRoot, "worktree", "add", "-d", modCopy)
 			if err != nil {
 				return fmt.Errorf("failed to create copy of current HEAD: %v", err)
 			}
 			e.Defer(func() {
-				gitDir(p.gitRoot, "worktree", "remove", modCopy)
+				gitDir(m.gitRoot, "worktree", "remove", modCopy)
 			})
 			// Set the working directory to be module
-			e.Cd = filepath.Join(e.WorkDir, repoDir, p.relPath)
+			e.Cd = filepath.Join(e.WorkDir, repoDir, m.relPath)
 			return nil
 		},
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-			"cue": buildCmdCUE(path),
+			"cue": buildCmdCUE(cuePath),
 		},
 	}
 	// TODO: improve logging/printing/errors when we make things concurrent
@@ -346,6 +380,7 @@ func (p *module) run(log *bytes.Buffer, version string) (err error) {
 		return lhs.name < rhs.name
 	})
 	for _, c := range r.children {
+		modContext = append(modContext, c.name, version)
 		if !c.failed && !c.verbose {
 			continue
 		}
@@ -353,7 +388,7 @@ func (p *module) run(log *bytes.Buffer, version string) (err error) {
 		if c.failed {
 			passFail = "FAIL"
 		}
-		fmt.Fprintf(log, "--- %s: %s/%s\n%s", passFail, c.name, version, indent(c.log, "\t"))
+		fmt.Fprintf(log, "--- %s: %s\n%s", passFail, path.Join(modContext...), indent(c.log, "\t"))
 	}
 	if r.failed {
 		return errTestFail

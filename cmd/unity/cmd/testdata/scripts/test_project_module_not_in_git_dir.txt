@@ -9,9 +9,8 @@ git commit -m 'Initial commit'
 cd $WORK
 
 # Test
-cd cue.mod
 ! unity test
-stderr 'main CUE module root "'$WORK'" is not contained within git repository "'$WORK'[/\\]cue.mod"'
+stderr 'failed to determine git root'
 
 -- cue.mod/module.cue --
 module: "mod.com"
