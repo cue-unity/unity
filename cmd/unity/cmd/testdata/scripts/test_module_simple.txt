@@ -1,4 +1,4 @@
-# Verify that we can run unity test in default (project) mode
+# Verify that we can run unity test in default (module) mode
 
 # Initial setup
 git init

@@ -1,0 +1,14 @@
+# Verify that we get a sensible error message when running
+# unity in the default module mode but a main module root
+# cannot be determined
+
+# Setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+! unity test
+stderr 'could not find any CUE module roots'
+
+-- README.md --
+Dummy file for git commit

@@ -19,11 +19,11 @@ package unity
 //go:generate go run cuelang.org/go/cmd/cue get go --local .
 //go:generate go run ./internal/genembed .
 
-// Manifest defines the schema of the manifest that a project must define to be
+// Manifest defines the schema of the manifest that a module must define to be
 // added to the unity test setup
 type Manifest struct {
-	// Versions is a list of CUE versions that are known good to the project. That
-	// is to say, running unity test -project with the list of versions should
+	// Versions is a list of CUE versions that are known good to the module.
+	// That is to say, running unity test with the list of versions should
 	// result in success
 	Versions []string
 }
