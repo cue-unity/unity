@@ -1,0 +1,30 @@
+# Verify that unity errors when an input scripts contains a file
+# with a module name/path
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+! unity test
+cmpenv stderr stderr.golden
+
+-- .unquote --
+cue.mod/tests/basic.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- cue.mod/tests/basic.txt --
+>cue eval
+>
+>-- repo --
+>-- repo/a.txt --
+
+-- stderr.golden --
+$WORK/cue.mod/tests/basic.txt contains invalid file path repo

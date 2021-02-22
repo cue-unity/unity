@@ -1,0 +1,32 @@
+# Verify that unity gives an appropriate error message when it
+# encounters a version specification of PATH when --nopath is specified
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+! unity test --nopath
+stderr 'CUE version of PATH not permitted'
+
+-- .unquote --
+cue.mod/tests/basic.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5

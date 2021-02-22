@@ -1,0 +1,4 @@
+# To prevent CRLF breakages on Windows for fragile files, like testdata.
+* -text
+/.github/workflows/*.yml linguist-generated
+/cue.mod/pkg/* linguist-generated

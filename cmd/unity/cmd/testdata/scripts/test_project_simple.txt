@@ -1,0 +1,38 @@
+# Verify that we can run unity test in default (project) mode
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+unity test
+! stdout .+
+
+-- .unquote --
+cue.mod/tests/basic1.txt
+cue.mod/tests/basic2.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- cue.mod/tests/basic1.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- cue.mod/tests/basic2.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5

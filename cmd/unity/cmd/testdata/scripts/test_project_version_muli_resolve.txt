@@ -1,0 +1,21 @@
+# Verify that unity exits with an appropriate error when
+# asked to use a semver version that resolves via multiple
+# URLs
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+! unity test v0.3.0-beta.5
+stderr 'failed to pre-resolve versions \[v0\.3\.0-beta\.5\]: failed to resolve "v0\.3\.0-beta\.5" to a single successful response'
+
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["v0.3.0-alpha6"]
+
