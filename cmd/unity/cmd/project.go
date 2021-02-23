@@ -17,19 +17,22 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/fs"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
 	"github.com/cue-sh/unity"
+	"github.com/cue-sh/unity/internal/copy"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"
 )
@@ -62,6 +65,9 @@ func testProject(cmd *Command, mt *moduleTester, versions []string) error {
 }
 
 func (mt *moduleTester) test(modules []*module, versions []string) error {
+	// if !mt.unsafe {
+	// 	return fmt.Errorf("we don't yet support running in safe mode")
+	// }
 	done := make(map[*module]map[string]bool)
 
 	// At this stage, we know that toTest is a list of
@@ -72,7 +78,7 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	}
 	var tested []*testResult
 	verify := func(whatToTest func(*module) []string) {
-		var wg sync.WaitGroup
+		// var wg sync.WaitGroup
 		for _, m := range modules {
 			m := m
 			mdone := done[m]
@@ -91,14 +97,14 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 					log: new(bytes.Buffer),
 				}
 				tested = append(tested, res)
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					res.err = mt.run(m, res.log, v)
-				}()
+				// wg.Add(1)
+				// go func() {
+				// 	defer wg.Done()
+				res.err = mt.run(m, res.log, v)
+				// }()
 			}
 		}
-		wg.Wait()
+		// wg.Wait()
 	}
 	// First check the base versions
 	verify(func(m *module) []string { return m.manifest.Versions })
@@ -135,6 +141,13 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 }
 
 type moduleTester struct {
+	// self is the path to the compiled version of self to be run within
+	// a docker container
+	self string
+
+	// image is the docker image to use for safe testing
+	image string
+
 	// versionResolver is the helper to resolve CUE versions for testing
 	versionResolver *versionResolver
 
@@ -158,33 +171,30 @@ type moduleTester struct {
 	overlayDir string
 
 	verbose bool
+
+	// unsafe indicates that we are allowed to run scripts tests in-process
+	// as opposed to in a separate Docker container
+	unsafe bool
 }
 
-func newModuleTester(gitRoot, overlayDir string, vr *versionResolver, r *cue.Runtime, manifestDef cue.Value) *moduleTester {
+func newModuleTester(mt moduleTester) *moduleTester {
 	sem := make(chan struct{}, runtime.NumCPU())
 	for i := 0; i < runtime.NumCPU(); i++ {
 		sem <- struct{}{}
 	}
-	mt := &moduleTester{
-		overlayDir:      overlayDir,
-		gitRoot:         gitRoot,
-		versionResolver: vr,
-		runtime:         r,
-		manifestDef:     manifestDef,
-		semaphore:       sem,
-	}
-	return mt
+	mt.semaphore = sem
+	return &mt
 }
 
 // limit returns blocks until a concurrency slot is available
 // for execution, and then returns a function which can be used
 // in a defer to release the semaphore.
-func (mt *moduleTester) limit() func() {
-	<-mt.semaphore
-	return func() {
-		mt.semaphore <- struct{}{}
-	}
-}
+// func (mt *moduleTester) limit() func() {
+// 	<-mt.semaphore
+// 	return func() {
+// 		mt.semaphore <- struct{}{}
+// 	}
+// }
 
 // newInstance creates a module instances rooted in the CUE module that is dir.
 // A precondition of this function is that dir must be contained in gitRoot.
@@ -339,32 +349,76 @@ type module struct {
 }
 
 func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err error) {
+	// TODO: we really shouldn't need to be resolving this again
 	cuePath, err := m.tester.versionResolver.resolve(version)
 	if err != nil {
 		return err
 	}
+	// Create a pristine copy of the git root with no history
+	td, err := ioutil.TempDir("", "unity-git-copy")
+	if err != nil {
+		return fmt.Errorf("failed to create temp dir for pristine git copy: %v", err)
+	}
+	if _, err = gitDir(m.gitRoot, "worktree", "add", "--detach", td); err != nil {
+		return fmt.Errorf("failed to create copy of current HEAD from %s: %v", m.gitRoot, err)
+	}
+	defer gitDir(m.gitRoot, "worktree", "remove", td)
+
+	if mt.unsafe {
+		return runModule(log, runModuleInfo{
+			manifestDir:   m.manifestDir,
+			gitRoot:       td,
+			relPath:       m.relPath,
+			testerRelPath: m.testerRelPath,
+			cuePath:       cuePath,
+			version:       version,
+		})
+	}
+	return dockerRunModule(mt.image, log, runModuleInfo{
+		self:          mt.self,
+		manifestDir:   m.manifestDir,
+		gitRoot:       td,
+		relPath:       m.relPath,
+		testerRelPath: m.testerRelPath,
+		cuePath:       cuePath,
+		version:       version,
+	})
+}
+
+type runModuleInfo struct {
+	self          string
+	manifestDir   string
+	gitRoot       string
+	relPath       string
+	testerRelPath string
+	cuePath       string
+	version       string
+}
+
+func runModule(log io.Writer, info runModuleInfo) (err error) {
 	params := testscript.Params{
-		Dir: m.manifestDir,
+		Dir: info.manifestDir,
 		Setup: func(e *testscript.Env) error {
 			// Limit concurrency across all testscript runs
-			e.Defer(m.tester.limit())
+			// e.Defer(m.tester.limit())
 
 			// Make a copy of the current state of the git repo into
 			// into the repo subdirectory of the workdir
-			modCopy := filepath.Join(e.WorkDir, repoDir)
-			_, err = gitDir(m.gitRoot, "worktree", "add", "-d", modCopy)
-			if err != nil {
-				return fmt.Errorf("failed to create copy of current HEAD: %v", err)
+			repoCopy := filepath.Join(e.WorkDir, repoDir)
+			if err := os.Mkdir(repoCopy, 0777); err != nil {
+				return err
 			}
-			e.Defer(func() {
-				gitDir(m.gitRoot, "worktree", "remove", modCopy)
-			})
+			if err := copy.Dir(info.gitRoot, repoCopy); err != nil {
+				return err
+			}
+			// The removal of the workdir will clean up the copy
+
 			// Set the working directory to be module
-			e.Cd = filepath.Join(e.WorkDir, repoDir, m.relPath)
+			e.Cd = filepath.Join(e.WorkDir, repoDir, info.relPath)
 			return nil
 		},
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-			"cue": buildCmdCUE(cuePath),
+			"cue": buildCmdCUE(info.cuePath),
 		},
 	}
 	// TODO: improve logging/printing/errors when we make things concurrent
@@ -389,7 +443,11 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		return lhs.name < rhs.name
 	})
 	for _, c := range r.children {
-		context := mt.buildContext(m, c.name, version)
+		var context []string
+		if info.testerRelPath != "" {
+			context = append(context, info.testerRelPath)
+		}
+		context = append(context, c.name, info.version)
 		if !c.failed && !c.verbose {
 			continue
 		}
@@ -397,7 +455,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		if c.failed {
 			passFail = "FAIL"
 		}
-		fmt.Fprintf(log, "--- %s: %s\n%s", passFail, context, indent(c.log, "\t"))
+		fmt.Fprintf(log, "--- %s: %s\n%s", passFail, path.Join(context...), indent(c.log, "\t"))
 	}
 	if r.failed {
 		return errTestFail
@@ -405,13 +463,44 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 	return nil
 }
 
-func (mt *moduleTester) buildContext(m *module, vs ...string) string {
-	var context []string
-	if m.testerRelPath != "" {
-		context = append(context, m.testerRelPath)
+func dockerRunModule(image string, log io.Writer, info runModuleInfo) (err error) {
+	// TODO we could add support for limiting the concurrency of testscript
+	// tests in the child process via something like:
+	//
+	// https://go2goplay.golang.org/p/YZxV9iVWDqf
+	args := []string{
+		"docker", "run", "--rm", "-t",
+
+		// All docker images used by unity must support this interface
+		"-e", fmt.Sprintf("USER_UID=%v", os.Geteuid()),
+		"-e", fmt.Sprintf("USER_GID=%v", os.Getegid()),
+
+		// Add mounts
+		"-v", info.manifestDir + ":/unity/manifestDir",
+		"-v", info.gitRoot + ":/unity/gitRoot",
+		"-v", info.cuePath + ":/unity/cue",
+		"-v", info.self + ":/unity/unity",
+
+		image,
+
+		"/unity/unity", "docker",
+		"--manifest", "/unity/manifestDir",
+		"--gitRoot", "/unity/gitRoot",
+		"--relPath", info.relPath,
+		"--testerRelPath", info.testerRelPath,
+		"--cuePath", "/unity/cue",
+		"--version", info.version,
 	}
-	context = append(context, vs...)
-	return path.Join(context...)
+	// TODO remove the multi-writer
+	var buf bytes.Buffer
+	comb := io.MultiWriter(&buf, log)
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = comb
+	cmd.Stderr = comb
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run [%v]: %v\n%s", cmd, err, buf.Bytes())
+	}
+	return nil
 }
 
 // indent returns the indented string version of b

@@ -1,1 +1,4 @@
-/cmd/unity/cmd/testdata/bin
+# We compile self (and cue) to this directory when we are running unity in
+# tests (common), or where we happen to be running unity as the main module
+# (less common)
+/.bin

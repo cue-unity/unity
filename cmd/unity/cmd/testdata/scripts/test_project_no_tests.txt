@@ -8,7 +8,7 @@ git commit -m 'Initial commit'
 
 # Test
 ! unity test
-stderr '\Qno scripts found matching glob: '$WORK'/cue.mod/tests/*.txt\E'
+stderr 'no scripts found matching glob: .*\Q/*.txt\E'
 
 -- cue.mod/module.cue --
 module: "mod.com"

@@ -28,13 +28,20 @@ import (
 )
 
 const (
-	flagUpdate  flagName = "update"
-	flagCorpus  flagName = "corpus"
-	flagRun     flagName = "run"
-	flagDir     flagName = "dir"
-	flagVerbose flagName = "verbose"
-	flagNoPath  flagName = "nopath"
-	flagOverlay flagName = "overlay"
+	flagTestUpdate  flagName = "update"
+	flagTestCorpus  flagName = "corpus"
+	flagTestRun     flagName = "run"
+	flagTestDir     flagName = "dir"
+	flagTestVerbose flagName = "verbose"
+	flagTestNoPath  flagName = "nopath"
+	flagTestOverlay flagName = "overlay"
+	flagTestUnsafe  flagName = "unsafe"
+
+	// dockerImage is the image we use when running in safe mode
+	//
+	// TODO: add support for custom docker images. Such images must support the interface
+	// of requiring USER_UID and USER_GID
+	dockerImage = "cueckoo/unity"
 )
 
 // newTestCmd creates a new test command
@@ -49,20 +56,21 @@ Need to document this command
 `,
 		RunE: mkRunE(c, testDef),
 	}
-	cmd.Flags().Bool(string(flagUpdate), false, "update files within tests when a cmp fails")
-	cmd.Flags().Bool(string(flagCorpus), false, "run tests for the submodules of the git repository that contains the working directory.")
-	cmd.Flags().String(string(flagRun), ".", "run only those tests matching the regular expression.")
-	cmd.Flags().StringP(string(flagDir), "d", ".", "search path for the project or corpus")
-	cmd.Flags().BoolP(string(flagVerbose), "v", false, "verbose output; log all script runs")
-	cmd.Flags().Bool(string(flagNoPath), false, "do not allow CUE version PATH. Useful for CI")
-	cmd.Flags().String(string(flagOverlay), "", "the directory from which to source overlays")
+	cmd.Flags().Bool(string(flagTestUpdate), false, "update files within tests when a cmp fails")
+	cmd.Flags().Bool(string(flagTestCorpus), false, "run tests for the submodules of the git repository that contains the working directory.")
+	cmd.Flags().String(string(flagTestRun), ".", "run only those tests matching the regular expression.")
+	cmd.Flags().StringP(string(flagTestDir), "d", ".", "search path for the project or corpus")
+	cmd.Flags().BoolP(string(flagTestVerbose), "v", false, "verbose output; log all script runs")
+	cmd.Flags().Bool(string(flagTestNoPath), false, "do not allow CUE version PATH. Useful for CI")
+	cmd.Flags().String(string(flagTestOverlay), "", "the directory from which to source overlays")
+	cmd.Flags().Bool(string(flagTestUnsafe), os.Getenv("UNITY_UNSAFE") != "", "do not use Docker for executing scripts")
 	return cmd
 }
 
 func testDef(c *Command, args []string) error {
 	debug := flagDebug.Bool(c)
 
-	vr, err := newVersionResolver(!flagNoPath.Bool(c))
+	vr, err := newVersionResolver(!flagTestNoPath.Bool(c))
 	vr.debug = debug
 	if err != nil {
 		return fmt.Errorf("could not create version resolver: %v", err)
@@ -80,7 +88,7 @@ func testDef(c *Command, args []string) error {
 	}
 
 	var r cue.Runtime
-	dir := flagDir.String(c)
+	dir := flagTestDir.String(c)
 
 	// Find the git root
 	gitRoot, err := gitDir(dir, "rev-parse", "--show-toplevel")
@@ -100,7 +108,7 @@ func testDef(c *Command, args []string) error {
 	}
 
 	// Verify that the overlay directory, if provided, exists
-	overlayDir := flagOverlay.String(c)
+	overlayDir := flagTestOverlay.String(c)
 	if overlayDir != "" {
 		fi, err := os.Stat(overlayDir)
 		if err != nil {
@@ -115,11 +123,31 @@ func testDef(c *Command, args []string) error {
 		}
 		overlayDir = abs
 	}
+	var self string
+	if !flagTestUnsafe.Bool(c) {
+		sp, isTemp, err := pathToSelf(dir)
+		if err != nil {
+			return fmt.Errorf("failed to derive path to self: %v", err)
+		}
+		if isTemp {
+			defer os.RemoveAll(sp)
+		}
+		self = filepath.Join(sp, "unity")
+	}
 
-	mt := newModuleTester(gitRoot, overlayDir, vr, &r, manifestDef)
-	mt.verbose = flagVerbose.Bool(c)
+	mt := newModuleTester(moduleTester{
+		self:            self,
+		image:           dockerImage,
+		gitRoot:         gitRoot,
+		overlayDir:      overlayDir,
+		versionResolver: vr,
+		runtime:         &r,
+		manifestDef:     manifestDef,
+		unsafe:          flagTestUnsafe.Bool(c),
+	})
+	mt.verbose = flagTestVerbose.Bool(c)
 
-	if flagCorpus.Bool(c) {
+	if flagTestCorpus.Bool(c) {
 		return testCorpus(c, mt, args)
 	}
 	err = testProject(c, mt, args)
