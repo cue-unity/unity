@@ -25,10 +25,6 @@ import (
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
-func git(args ...string) (string, error) {
-	return gitDir(".", args...)
-}
-
 func gitDir(dir string, args ...string) (string, error) {
 	return gitEnvDir(os.Environ(), dir, args...)
 }

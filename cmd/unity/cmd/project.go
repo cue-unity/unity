@@ -178,6 +178,14 @@ type moduleTester struct {
 
 	// update files within test archives when a cmp fails
 	update bool
+
+	// staged indicates that staged git changes should be applied
+	// when making a worktree copy of a module's project
+	staged bool
+
+	// ignoreDirty indicates we should ignore untracked files when making
+	// a copy of a module's project
+	ignoreDirty bool
 }
 
 func newModuleTester(mt moduleTester) *moduleTester {
@@ -219,14 +227,10 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 		gitRel = strings.TrimPrefix(gitRel, string(os.PathSeparator))
 	}
 
-	// Until we support a "dirty" mode we need to bail on a non-porcelain
-	// git setup
-	status, err := git("status", "--porcelain")
+	// Verify git status
+	hasStaged, err := mt.verifyGitStatus(gitRoot)
 	if err != nil {
-		return nil, fmt.Errorf("failed to determine if git working tree status")
-	}
-	if strings.TrimSpace(status) != "" {
-		return nil, fmt.Errorf("working tree is dirty; not currently supported: %v", status)
+		return nil, err
 	}
 
 	// Verify this is a valid module by loading the manifest
@@ -295,14 +299,53 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 		relPath:       gitRel,
 		manifestDir:   manifestDir,
 		manifest:      manifest,
+		hasStaged:     hasStaged,
 	}
 	return res, nil
+}
+
+// verifyGitStatus ensures that the working tree in dir is valid according to
+// the configuration of mt. It returns hasStaged to indicate if there are
+// staged changes.
+func (mt *moduleTester) verifyGitStatus(dir string) (hasStaged bool, err error) {
+	status, err := gitDir(dir, "status", "--porcelain")
+	if err != nil {
+		return false, fmt.Errorf("failed to determine if git working tree status")
+	}
+	status = strings.TrimSpace(status)
+	if status == "" {
+		return false, nil
+	}
+	lines := strings.Split(status, "\n")
+	hasUntracked := false
+	for _, l := range lines {
+		if strings.HasPrefix(l, "??") {
+			hasUntracked = true
+		} else {
+			hasStaged = true
+		}
+	}
+	if mt.ignoreDirty {
+		// Nothing to check, but note we return the staged status
+		return
+	}
+	if hasUntracked {
+		return hasStaged, fmt.Errorf("working tree has untracked files; stage changes and use --%s or use --%s", flagTestStaged, flagTestIgnoreDirty)
+	}
+	// So we now don't have untracked changes but do have staged changes
+	if !mt.staged {
+		return hasStaged, fmt.Errorf("working tree has staged changes; use --%s to test with staged changes", flagTestStaged)
+	}
+	return
 }
 
 func (mt *moduleTester) deriveModules(dir string) (modules []*module, err error) {
 	err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+		if info.IsDir() && (strings.HasPrefix(info.Name(), ".") || strings.HasPrefix(info.Name(), "_")) {
+			return filepath.SkipDir
 		}
 		if info.Name() != "cue.mod" {
 			return nil
@@ -349,6 +392,10 @@ type module struct {
 	// tester is the moduleTester instance that created
 	// this module instance
 	tester *moduleTester
+
+	// hasStaged indicates the module is part of a project
+	// that has hasStaged git changes that should be applied
+	hasStaged bool
 }
 
 func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err error) {
@@ -364,6 +411,23 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 	}
 	if _, err = gitDir(m.gitRoot, "worktree", "add", "--detach", td); err != nil {
 		return fmt.Errorf("failed to create copy of current HEAD from %s: %v", m.gitRoot, err)
+	}
+	if m.hasStaged {
+		// TODO make this more efficient by not reading into memory
+		var changes, stderr bytes.Buffer
+		read := exec.Command("git", "diff", "--staged")
+		read.Dir = m.gitRoot
+		read.Stdout = &changes
+		read.Stderr = &stderr
+		if err := read.Run(); err != nil {
+			return fmt.Errorf("failed to read staged changes in %s via [%v]: %v\n%s", m.gitRoot, read, err, stderr.Bytes())
+		}
+		write := exec.Command("git", "apply")
+		write.Dir = td
+		write.Stdin = &changes
+		if out, err := write.CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to apply staged changes in %s via [%v]: %v\n%s", td, write, err, out)
+		}
 	}
 	defer gitDir(m.gitRoot, "worktree", "remove", td)
 
