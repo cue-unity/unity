@@ -56,7 +56,7 @@ Need to document this command
 `,
 		RunE: mkRunE(c, testDef),
 	}
-	cmd.Flags().Bool(string(flagTestUpdate), false, "update files within tests when a cmp fails")
+	cmd.Flags().Bool(string(flagTestUpdate), false, "update files within test archives when cmp fails")
 	cmd.Flags().Bool(string(flagTestCorpus), false, "run tests for the submodules of the git repository that contains the working directory.")
 	cmd.Flags().String(string(flagTestRun), ".", "run only those tests matching the regular expression.")
 	cmd.Flags().StringP(string(flagTestDir), "d", ".", "search path for the project or corpus")
@@ -144,6 +144,7 @@ func testDef(c *Command, args []string) error {
 		runtime:         &r,
 		manifestDef:     manifestDef,
 		unsafe:          flagTestUnsafe.Bool(c),
+		update:          flagTestUpdate.Bool(c),
 	})
 	mt.verbose = flagTestVerbose.Bool(c)
 

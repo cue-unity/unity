@@ -1,0 +1,39 @@
+# Verify that passing --update works with a simple project
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+unity test --update
+! stdout .+
+cmp cue.mod/tests/basic.txt cue.mod/tests/basic.txt.golden
+
+-- .unquote --
+cue.mod/tests/basic.txt
+cue.mod/tests/basic.txt.golden
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 4
+-- cue.mod/tests/basic.txt.golden --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5

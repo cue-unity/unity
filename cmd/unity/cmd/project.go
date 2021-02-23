@@ -175,6 +175,9 @@ type moduleTester struct {
 	// unsafe indicates that we are allowed to run scripts tests in-process
 	// as opposed to in a separate Docker container
 	unsafe bool
+
+	// update files within test archives when a cmp fails
+	update bool
 }
 
 func newModuleTester(mt moduleTester) *moduleTester {
@@ -364,17 +367,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 	}
 	defer gitDir(m.gitRoot, "worktree", "remove", td)
 
-	if mt.unsafe {
-		return runModule(log, runModuleInfo{
-			manifestDir:   m.manifestDir,
-			gitRoot:       td,
-			relPath:       m.relPath,
-			testerRelPath: m.testerRelPath,
-			cuePath:       cuePath,
-			version:       version,
-		})
-	}
-	return dockerRunModule(mt.image, log, runModuleInfo{
+	rmi := runModuleInfo{
 		self:          mt.self,
 		manifestDir:   m.manifestDir,
 		gitRoot:       td,
@@ -382,7 +375,13 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		testerRelPath: m.testerRelPath,
 		cuePath:       cuePath,
 		version:       version,
-	})
+		update:        mt.update,
+	}
+
+	if mt.unsafe {
+		return runModule(log, rmi)
+	}
+	return dockerRunModule(mt.image, log, rmi)
 }
 
 type runModuleInfo struct {
@@ -393,11 +392,13 @@ type runModuleInfo struct {
 	testerRelPath string
 	cuePath       string
 	version       string
+	update        bool
 }
 
 func runModule(log io.Writer, info runModuleInfo) (err error) {
 	params := testscript.Params{
-		Dir: info.manifestDir,
+		UpdateScripts: info.update,
+		Dir:           info.manifestDir,
 		Setup: func(e *testscript.Env) error {
 			// Limit concurrency across all testscript runs
 			// e.Defer(m.tester.limit())
@@ -490,6 +491,9 @@ func dockerRunModule(image string, log io.Writer, info runModuleInfo) (err error
 		"--testerRelPath", info.testerRelPath,
 		"--cuePath", "/unity/cue",
 		"--version", info.version,
+	}
+	if info.update {
+		args = append(args, "--update")
 	}
 	// TODO remove the multi-writer
 	var buf bytes.Buffer
