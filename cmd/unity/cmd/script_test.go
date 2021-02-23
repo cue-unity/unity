@@ -44,66 +44,87 @@ func TestScripts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// selfDir is the path that contains the unity command for running
+	// in tests
+	selfDir, ok, err := pathToSelf(cwd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatalf("pathToSelf should not be temporary in a test scenario")
+	}
 	// go install the required version of CUE to ensure that CUE versions
-	// of PATH specified in unity tests run consistently
-	gobin := filepath.Join(cwd, "testdata", "bin")
+	// of PATH specified in unity tests run consistently. Put this
+	// alongside unity in selfDir
 	cmd := exec.Command("go", "install", "cuelang.org/go/cmd/cue")
-	cmd.Env = append(os.Environ(), "GOBIN="+gobin)
+	cmd.Env = append(os.Environ(), "GOBIN="+selfDir)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("failed to run %v: %v\n%s", cmd, err, out)
 	}
-	testscript.Run(t, testscript.Params{
-		Dir: filepath.Join("testdata", "scripts"),
-		Setup: func(e *testscript.Env) (err error) {
-			defer helperDefer(&err)
-			h := &helper{env: e}
 
-			// Augment the environment with a HOME setup
-			home := filepath.Join(e.WorkDir, homeDirName)
-			if err := os.Mkdir(home, 0777); err != nil {
-				return err
-			}
+	for _, v := range []string{"safe", "unsafe"} {
+		v := v
+		t.Run(v, func(t *testing.T) {
+			testscript.Run(t, testscript.Params{
+				Dir: filepath.Join("testdata", "scripts"),
+				Setup: func(e *testscript.Env) (err error) {
+					defer helperDefer(&err)
+					h := &helper{env: e}
 
-			// Add GOBIN (set above) to PATH
-			var path string
-			for i := len(e.Vars) - 1; i >= 0; i-- {
-				v := e.Vars[i]
-				if strings.HasPrefix(v, "PATH=") {
-					path = strings.TrimPrefix(v, "PATH=")
-					break
-				}
-			}
-			path = gobin + string(os.PathListSeparator) + path
+					// Augment the environment with a HOME setup
+					home := filepath.Join(e.WorkDir, homeDirName)
+					if err := os.Mkdir(home, 0777); err != nil {
+						return err
+					}
 
-			// Augment the environment
-			e.Vars = append(e.Vars,
-				"PATH="+path,
-				"HOME="+home,
-				"UNITY_SEMVER_URL_TEMPLATE=file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"),
-			)
+					// Add GOBIN (set above) to PATH
+					var path string
+					for i := len(e.Vars) - 1; i >= 0; i-- {
+						v := e.Vars[i]
+						if strings.HasPrefix(v, "PATH=") {
+							path = strings.TrimPrefix(v, "PATH=")
+							break
+						}
+					}
+					path = selfDir + string(os.PathListSeparator) + path
 
-			// Always run git config steps
-			h.git("config", "--global", "user.name", "unity")
-			h.git("config", "--global", "user.email", "unity@cuelang.org")
-			h.git("config", "--global", "user.email", "unity@cuelang.org")
-			h.write(filepath.Join(home, ".gitignore"), strings.Join([]string{
-				homeDirName,
-			}, "\n"))
-			h.git("config", "--global", "core.excludesfile", filepath.Join(home, ".gitignore"))
-			h.git("config", "--global", "init.defaultBranch", "main")
+					// Augment the environment
+					e.Vars = append(e.Vars,
+						"UNITY_TEST_PATH_TO_SELF="+selfDir,
+						"PATH="+path,
+						"HOME="+home,
+						"UNITY_SEMVER_URL_TEMPLATE=file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"),
+					)
+					if v == "unsafe" {
+						e.Vars = append(e.Vars,
+							"UNITY_UNSAFE=true",
+						)
+					}
 
-			// Pre-script setup via special files
-			if err := processSpecialFiles(e); err != nil {
-				return err
-			}
-			return nil
-		},
-		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-			"cue": runCmd("cue"),
-			"git": runCmd("git"),
-		},
-	})
+					// Always run git config steps
+					h.git("config", "--global", "user.name", "unity")
+					h.git("config", "--global", "user.email", "unity@cuelang.org")
+					h.git("config", "--global", "user.email", "unity@cuelang.org")
+					h.write(filepath.Join(home, ".gitignore"), strings.Join([]string{
+						homeDirName,
+					}, "\n"))
+					h.git("config", "--global", "core.excludesfile", filepath.Join(home, ".gitignore"))
+					h.git("config", "--global", "init.defaultBranch", "main")
+
+					// Pre-script setup via special files
+					if err := processSpecialFiles(e); err != nil {
+						return err
+					}
+					return nil
+				},
+				Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+					"cue": runCmd("cue"),
+					"git": runCmd("git"),
+				},
+			})
+		})
+	}
 }
 
 func runCmd(cmd string) func(ts *testscript.TestScript, neg bool, args []string) {

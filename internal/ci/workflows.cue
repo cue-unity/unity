@@ -54,6 +54,7 @@ test: _#bashWorkflow & {
 				},
 				_#goModVerify,
 				_#goGenerate,
+				_#buildDockerImage,
 				_#goTest,
 				_#goTestRace,
 				_#staticcheck,
@@ -149,6 +150,11 @@ _#goGenerate: _#step & {
 	if: "matrix.go-version == '\(_#codeGenGo)' && matrix.os != '\(_#windowsMachine)'"
 }
 
+_#buildDockerImage: _#step & {
+	name: "Build docker image (locally) for unity"
+	run:  "_scripts/buildDockerImage.sh"
+}
+
 _#staticcheck: _#step & {
 	name: "staticcheck"
 	run:  "go run honnef.co/go/tools/cmd/staticcheck ./..."
@@ -156,12 +162,12 @@ _#staticcheck: _#step & {
 
 _#goTest: _#step & {
 	name: "Test"
-	run:  "go test ./..."
+	run:  "go test -count=1 ./..."
 }
 
 _#goTestRace: _#step & {
 	name: "Test with -race"
-	run:  "go test -race ./..."
+	run:  "go test -count=1 -race ./..."
 }
 
 _#checkGitClean: _#step & {
