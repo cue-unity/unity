@@ -36,9 +36,10 @@ test: _#bashWorkflow & {
 	name: "Test"
 	on: {
 		push: {
-			branches: ["**"] // any branch (including '/' namespaced branches)
-			"tags-ignore": [_#releaseTagPattern]
+			branches: ["main"]
+			tags: [_#releaseTagPattern]
 		}
+		pull_request: branches: ["**"]
 	}
 
 	jobs: {
