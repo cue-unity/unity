@@ -28,6 +28,7 @@ const (
 	flagDockerTesterRelPath flagName = "testerRelPath"
 	flagDockerCUEPath       flagName = "cuePath"
 	flagDockerVersion       flagName = "version"
+	flagDockerUpdate        flagName = "update"
 )
 
 // newTestCmd creates a new test command
@@ -46,6 +47,7 @@ func newDockerCmd(c *Command) *cobra.Command {
 	cmd.Flags().String(string(flagDockerTesterRelPath), "", "the relative path the module tester git root")
 	cmd.Flags().String(string(flagDockerCUEPath), "", "the path to the CUE binary to use")
 	cmd.Flags().String(string(flagDockerVersion), "", "the version being tested")
+	cmd.Flags().Bool(string(flagDockerUpdate), false, "update test archives when cmp fails")
 	return cmd
 }
 
@@ -59,6 +61,7 @@ func dockerDef(c *Command, args []string) error {
 			testerRelPath: flagDockerTesterRelPath.String(c),
 			cuePath:       flagDockerCUEPath.String(c),
 			version:       flagDockerVersion.String(c),
+			update:        flagDockerUpdate.Bool(c),
 		},
 	)
 }

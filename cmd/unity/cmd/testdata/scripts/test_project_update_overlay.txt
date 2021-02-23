@@ -1,0 +1,38 @@
+# Verify the --update works when using an overlay
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+unity test --overlay overlay --update
+! stdout .+
+cmp overlay/basic.txt overlay/basic.txt.golden
+
+-- .unquote --
+overlay/basic.txt
+overlay/basic.txt.golden
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- overlay/tests.cue --
+package tests
+
+Versions: ["PATH"]
+-- overlay/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 4
+-- overlay/basic.txt.golden --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5
