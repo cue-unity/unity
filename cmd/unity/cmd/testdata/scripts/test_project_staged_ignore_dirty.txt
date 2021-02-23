@@ -1,0 +1,76 @@
+# Verify that we get a sensible error message when we have either untracked or
+# staged files in the working tree and we have not provided --staged. Verify
+# that error message disappears when we provide --ignore-dirty, and also that
+# --staged behaves as expected.
+
+# Initial setup. Careful additions
+git init
+git add x.cue
+git commit -m 'Initial commit'
+
+# Untracked only
+! unity test
+stderr 'working tree has untracked files; stage changes and use --staged or use --ignore-dirty'
+
+# Ignore untracked only
+unity test --ignore-dirty
+ ! stdout .+
+
+# Stage some changes
+git add cue.mod/module.cue
+
+# Untracked and staged changes
+! unity test
+stderr 'working tree has untracked files; stage changes and use --staged or use --ignore-dirty'
+
+# Try to use only staged changes
+! unity test --staged
+stderr 'working tree has untracked files; stage changes and use --staged or use --ignore-dirty'
+
+# Ignore untracked and staged changes
+unity test --ignore-dirty
+ ! stdout .+
+
+# Stage everything
+git add -A
+
+# Staged changes
+! unity test
+stderr 'working tree has staged changes; use --staged to test with staged changes'
+
+# Actually use staged changes
+exec echo $WORK/cue.mod/tests
+unity test --staged
+! stdout .+
+
+# Ignore staged changes
+unity test --ignore-dirty
+! stdout .+
+
+-- .unquote --
+cue.mod/tests/basic1.txt
+cue.mod/tests/basic2.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+-- cue.mod/tests/basic1.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- cue.mod/tests/basic2.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5

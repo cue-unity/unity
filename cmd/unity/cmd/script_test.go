@@ -30,6 +30,7 @@ import (
 
 const (
 	homeDirName = ".user-home"
+	tmpDirName  = ".tmp-dir"
 )
 
 func TestMain(m *testing.M) {
@@ -78,6 +79,11 @@ func TestScripts(t *testing.T) {
 						return err
 					}
 
+					tmp := filepath.Join(e.WorkDir, tmpDirName)
+					if err := os.Mkdir(tmp, 0777); err != nil {
+						return err
+					}
+
 					// Add GOBIN (set above) to PATH
 					var path string
 					for i := len(e.Vars) - 1; i >= 0; i-- {
@@ -94,6 +100,7 @@ func TestScripts(t *testing.T) {
 						"UNITY_TEST_PATH_TO_SELF="+selfDir,
 						"PATH="+path,
 						"HOME="+home,
+						"TMPDIR="+tmp,
 						"UNITY_SEMVER_URL_TEMPLATE=file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"),
 					)
 					if v == "unsafe" {
@@ -108,6 +115,7 @@ func TestScripts(t *testing.T) {
 					h.git("config", "--global", "user.email", "unity@cuelang.org")
 					h.write(filepath.Join(home, ".gitignore"), strings.Join([]string{
 						homeDirName,
+						tmpDirName,
 					}, "\n"))
 					h.git("config", "--global", "core.excludesfile", filepath.Join(home, ".gitignore"))
 					h.git("config", "--global", "init.defaultBranch", "main")

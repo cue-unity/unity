@@ -28,14 +28,16 @@ import (
 )
 
 const (
-	flagTestUpdate  flagName = "update"
-	flagTestCorpus  flagName = "corpus"
-	flagTestRun     flagName = "run"
-	flagTestDir     flagName = "dir"
-	flagTestVerbose flagName = "verbose"
-	flagTestNoPath  flagName = "nopath"
-	flagTestOverlay flagName = "overlay"
-	flagTestUnsafe  flagName = "unsafe"
+	flagTestUpdate      flagName = "update"
+	flagTestCorpus      flagName = "corpus"
+	flagTestRun         flagName = "run"
+	flagTestDir         flagName = "dir"
+	flagTestVerbose     flagName = "verbose"
+	flagTestNoPath      flagName = "nopath"
+	flagTestOverlay     flagName = "overlay"
+	flagTestUnsafe      flagName = "unsafe"
+	flagTestStaged      flagName = "staged"
+	flagTestIgnoreDirty flagName = "ignore-dirty"
 
 	// dockerImage is the image we use when running in safe mode
 	//
@@ -64,6 +66,8 @@ Need to document this command
 	cmd.Flags().Bool(string(flagTestNoPath), false, "do not allow CUE version PATH. Useful for CI")
 	cmd.Flags().String(string(flagTestOverlay), "", "the directory from which to source overlays")
 	cmd.Flags().Bool(string(flagTestUnsafe), os.Getenv("UNITY_UNSAFE") != "", "do not use Docker for executing scripts")
+	cmd.Flags().Bool(string(flagTestStaged), false, "apply staged changes during tests")
+	cmd.Flags().Bool(string(flagTestIgnoreDirty), false, "ignore untracked files, and staged files unless --staged")
 	return cmd
 }
 
@@ -145,6 +149,8 @@ func testDef(c *Command, args []string) error {
 		manifestDef:     manifestDef,
 		unsafe:          flagTestUnsafe.Bool(c),
 		update:          flagTestUpdate.Bool(c),
+		staged:          flagTestStaged.Bool(c),
+		ignoreDirty:     flagTestIgnoreDirty.Bool(c),
 	})
 	mt.verbose = flagTestVerbose.Bool(c)
 
