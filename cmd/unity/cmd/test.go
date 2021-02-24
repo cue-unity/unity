@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,6 +39,7 @@ const (
 	flagTestUnsafe      flagName = "unsafe"
 	flagTestStaged      flagName = "staged"
 	flagTestIgnoreDirty flagName = "ignore-dirty"
+	flagTestSelf        flagName = "self"
 
 	// dockerImage is the image we use when running in safe mode
 	//
@@ -68,6 +70,8 @@ Need to document this command
 	cmd.Flags().Bool(string(flagTestUnsafe), os.Getenv("UNITY_UNSAFE") != "", "do not use Docker for executing scripts")
 	cmd.Flags().Bool(string(flagTestStaged), false, "apply staged changes during tests")
 	cmd.Flags().Bool(string(flagTestIgnoreDirty), false, "ignore untracked files, and staged files unless --staged")
+	cmd.Flags().String(string(flagTestSelf), os.Getenv("UNITY_SELF"), "the context within which we can resolve self to build for docker")
+
 	return cmd
 }
 
@@ -92,7 +96,26 @@ func testDef(c *Command, args []string) error {
 	}
 
 	var r cue.Runtime
+
+	// dir is the context within which we will be running
 	dir := flagTestDir.String(c)
+
+	// selfDir is used in the case that:
+	//
+	// * we are running in safe mode, i.e. scrip tests are run in docker,
+	// * the running binary (i.e. unity, self) does not match in terms of
+	// GOOS/GOARCH the target docker image
+	// * the running binary's main module Version is not a semver version
+	// (because otherwise we would be able to resolve everything through the
+	// proxy)
+	//
+	// In case --self is not provided, then we fallback to dir. Either way
+	// the in this scenario it must be possible to resolve the unity module
+	// from within selfDir
+	selfDir := flagTestSelf.String(c)
+	if selfDir == "" {
+		selfDir = dir
+	}
 
 	// Find the git root
 	gitRoot, err := gitDir(dir, "rev-parse", "--show-toplevel")
@@ -127,20 +150,34 @@ func testDef(c *Command, args []string) error {
 		}
 		overlayDir = abs
 	}
+
+	bh, err := newBuildHelper()
+	if err != nil {
+		return fmt.Errorf("failed to create build helper: %v", err)
+	}
+	defer bh.cache.Trim()
+
 	var self string
 	if !flagTestUnsafe.Bool(c) {
-		sp, isTemp, err := pathToSelf(dir)
+		if err := bh.targetDocker(dockerImage); err != nil {
+			return fmt.Errorf("failed inspect docker image %s: %v", dockerImage, err)
+		}
+		// Work out whether the current GOOS/GOARCH is appropriate for the target
+		// docker image
+		td, err := ioutil.TempDir("", "unity-self-dir")
+		if err != nil {
+			return fmt.Errorf("failed to create a temp directory for self build: %v", err)
+		}
+		defer os.RemoveAll(td)
+		self, err = bh.pathToSelf(selfDir, td, false)
 		if err != nil {
 			return fmt.Errorf("failed to derive path to self: %v", err)
 		}
-		if isTemp {
-			defer os.RemoveAll(sp)
-		}
-		self = filepath.Join(sp, "unity")
 	}
 
 	mt := newModuleTester(moduleTester{
-		self:            self,
+		self:            self, // only used in safe mode
+		buildHelper:     bh,
 		image:           dockerImage,
 		gitRoot:         gitRoot,
 		overlayDir:      overlayDir,

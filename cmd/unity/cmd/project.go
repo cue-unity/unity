@@ -145,6 +145,12 @@ type moduleTester struct {
 	// a docker container
 	self string
 
+	// buildHelper is the build helper we use for all binary builds. It
+	// encapsulates the target GOOS and GOARCH, and nicely bundles up
+	// the logic required for saving binary assets into the unity cache
+	// if required
+	buildHelper *buildHelper
+
 	// image is the docker image to use for safe testing
 	image string
 

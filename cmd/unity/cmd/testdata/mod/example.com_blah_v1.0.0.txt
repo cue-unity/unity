@@ -1,0 +1,15 @@
+-- .mod --
+module example.com/blah
+
+-- .info --
+{"Version":"v1.0.0","Time":"2018-10-22T18:45:39Z"}
+
+-- go.mod --
+module example.com/blah
+
+-- main.go --
+package main
+
+func main() {
+	println("hello")
+}

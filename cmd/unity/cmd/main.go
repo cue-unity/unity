@@ -17,18 +17,10 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime/debug"
-	"strings"
 
 	"cuelang.org/go/cue/errors"
-	"github.com/rogpeppe/go-internal/cache"
 	"github.com/spf13/cobra"
-	"golang.org/x/mod/semver"
 )
 
 const (
@@ -38,6 +30,8 @@ const (
 
 	// mainSelf is the package path of unity the main package
 	mainSelf = moduleSelf + "/cmd/unity"
+
+	mainName = "unity"
 
 	flagDebug flagName = "debug"
 )
@@ -106,109 +100,4 @@ func newRootCmd() *Command {
 	}
 
 	return c
-}
-
-// pathToSelf returns the directory within which a compiled version of self
-// called "unity" appropriate for running within a docker container exists.
-// temp indicates to the caller whether that is in a temporary location that
-// must be purged after use. dir is the context within which we are running
-// and can find self
-func pathToSelf(dir string) (self string, temp bool, err error) {
-	// When running tests, specifically testscript tests, we will not
-	// be running in the context of this module. So we override the directory
-	// for the resolution of self. Feels a bit gross, but reasonable given
-	// it should only be the unity tests where this is necessary
-	if v := os.Getenv("UNITY_TEST_PATH_TO_SELF"); v != "" {
-		return v, false, nil
-	}
-
-	// compileTarget indicates where we should ensure self is built
-	var compileTarget string
-
-	// vcache and cacheHash will be set when we should write self back to a cache
-	var vcache *cache.Cache
-	var cacheHash *cache.Hash
-
-	// Work out where we need to compile self.
-	bi, ok := debug.ReadBuildInfo()
-	if !ok || bi.Main.Version == "(devel)" {
-		// Assert that we are running in the context of the module that
-		// provides the main package. i.e. that the main module is
-		// github.com/cue-sh/unity. This is not guaranteed to be the case
-		// but for the purposes of what we need this is probably sufficient.
-		// If it isn't, then we cross that bridge when we come to it
-		list := exec.Command("go", "list", "-m", "-f={{.Dir}}", moduleSelf)
-		list.Dir = dir
-		listOut, err := list.CombinedOutput()
-		if err != nil {
-			return "", false, fmt.Errorf("failed to determine context for %s; in %s ran [%v]: %v\n%s", moduleSelf, dir, list, err, listOut)
-		}
-		compileTarget = strings.TrimSpace(string(listOut))
-		compileTarget = filepath.Join(compileTarget, ".bin")
-	} else {
-		m := bi.Main
-		if bi.Main.Replace != nil {
-			m = *bi.Main.Replace
-		}
-		if filepath.IsAbs(mainSelf) {
-			compileTarget = m.Path
-		} else {
-			// Assert that we have an actual semver version
-			if !semver.IsValid(m.Version) {
-				return "", false, fmt.Errorf("found invalid semver version %q for %s", m.Version, moduleSelf)
-			}
-			// Whether we have a cache hit or miss we will use a temp directory
-			compileTarget, err = ioutil.TempDir("", "unity-self")
-			if err != nil {
-				return "", false, fmt.Errorf("failed to create temp directory for self: %v", err)
-			}
-			ucd, err := os.UserCacheDir()
-			if err != nil {
-				return "", false, fmt.Errorf("failed to determine user cache dir: %v", err)
-			}
-			binCache := filepath.Join(ucd, "unity", "bin")
-			if err := os.MkdirAll(binCache, 0777); err != nil {
-				return "", false, fmt.Errorf("failed to ensure %s exists: %v", binCache, err)
-			}
-			vcache, err = cache.Open(binCache)
-			if err != nil {
-				return "", false, fmt.Errorf("failed to open cache at %s: %v", binCache, err)
-			}
-			defer vcache.Trim()
-			cacheHash = cache.NewHash("version")
-			cacheHash.Write([]byte(m.Version))
-			if contents, _, err := vcache.GetBytes(cacheHash.Sum()); err == nil {
-				// cache hit
-				target := filepath.Join(compileTarget, "unity")
-				if err := os.WriteFile(target, contents, 0777); err != nil {
-					return "", false, fmt.Errorf("failed to write self to %s: %v", target, err)
-				}
-				return compileTarget, true, nil
-			}
-		}
-	}
-	target := filepath.Join(compileTarget, "unity")
-	build := exec.Command("go", "build", "-o", target, mainSelf)
-	build.Dir = dir
-	build.Env = append(os.Environ(),
-		"GOOS=linux",
-		"GOARCH=amd64",
-		"CGO_ENABLED=0",
-	)
-	buildOut, err := build.CombinedOutput()
-	if err != nil {
-		return "", false, fmt.Errorf("failed to build %s; ran [%v]: %v\n%s", mainSelf, build, err, buildOut)
-	}
-	if vcache == nil {
-		return compileTarget, false, nil
-	}
-	targetFile, err := os.Open(target)
-	if err != nil {
-		return "", false, fmt.Errorf("failed to open compiled version of self")
-	}
-	// Write back to the cache
-	if _, _, err := vcache.Put(cacheHash.Sum(), targetFile); err != nil {
-		return "", false, fmt.Errorf("failed to write compiled version of self to the cache: %v", err)
-	}
-	return compileTarget, true, nil
 }
