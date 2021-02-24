@@ -55,7 +55,6 @@ test: _#bashWorkflow & {
 				},
 				_#goModVerify,
 				_#goGenerate,
-				_#buildDockerImage,
 				_#goTest,
 				_#goTestRace,
 				_#staticcheck,
@@ -149,11 +148,6 @@ _#goGenerate: _#step & {
 	// The Go version corresponds to the precise version specified in
 	// the matrix. Skip windows for now until we work out why re-gen is flaky
 	if: "matrix.go-version == '\(_#codeGenGo)' && matrix.os != '\(_#windowsMachine)'"
-}
-
-_#buildDockerImage: _#step & {
-	name: "Build docker image (locally) for unity"
-	run:  "_scripts/buildDockerImage.sh"
 }
 
 _#staticcheck: _#step & {

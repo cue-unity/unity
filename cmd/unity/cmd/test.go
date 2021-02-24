@@ -43,7 +43,7 @@ const (
 	//
 	// TODO: add support for custom docker images. Such images must support the interface
 	// of requiring USER_UID and USER_GID
-	dockerImage = "cueckoo/unity"
+	dockerImage = "docker.io/cueckoo/unity:72a5a022b434a768e8c5ae5be7082d780211accd"
 )
 
 // newTestCmd creates a new test command
