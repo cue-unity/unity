@@ -30,13 +30,9 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/cue-sh/unity/internal/copy"
+	"github.com/rogpeppe/go-internal/cache"
 	"golang.org/x/mod/semver"
-)
-
-const (
-	// cacheVersions is the name of the directory within the unity cache
-	// root where CUE versions are cached
-	cacheVersions = "versions"
 )
 
 // goReleaserBuilder defines the API of the various strategies for mapping
@@ -44,23 +40,101 @@ const (
 type goReleaserBuilder func(version, goos, goarch string) (string, error)
 
 type versionResolver struct {
-	// cacheRoot is the directory within which unity cache
-	// information is stored, e.g. the versions subdirectory
-	// is the cache of CUE versions used by unity
-	cacheRoot string
+	// resolvers are the list of resolver implementations we support
+	resolvers []resolver
+}
 
-	// resolvedLock guards acces to resolved
-	resolvedLock sync.Mutex
+func (vr *versionResolver) resolve(version, dir, working, targetDir string) error {
+	var errs []error
+	var match int
+	for _, r := range vr.resolvers {
+		err := r.resolve(version, dir, working, targetDir)
+		switch err {
+		case nil:
+			match++
+		case errNoMatch:
+		default:
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		var buf bytes.Buffer
+		join := ""
+		for _, e := range errs {
+			fmt.Fprintf(&buf, "%v%v", join, e)
+			join = "\n"
+		}
+		return fmt.Errorf("got errors during version resolution:\n%s", buf.Bytes())
+	}
+	if match != 1 {
+		return fmt.Errorf("expected 1 match; got %v", match)
+	}
+	return nil
+}
 
-	// resolved is a map of previously resolved versions
-	resolved map[string]resolvedVersion
+var errNoMatch = errors.New("resolver not appropriate for version")
 
-	// oncesLock guards access to onces
-	oncesLock sync.Mutex
+type resolver interface {
+	// resolve derives version in the context of dir
+	// (some versions are context-dependent, e.g. go.mod).
+	resolve(version, dir, working, targetDir string) error
+}
 
-	// onces captures the once-only semantics of each
-	// version we try to resolve
-	onces map[string]*sync.Once
+type pathResolver struct {
+	// allowPATH determines whether a CUE version of PATH is allowed or not
+	allowPATH bool
+}
+
+var _ resolver = (*pathResolver)(nil)
+
+func newPathResolver(c resolverConfig) (resolver, error) {
+	res := &pathResolver{
+		allowPATH: c.allowPATH,
+	}
+	return res, nil
+}
+
+func (p *pathResolver) resolve(version, dir, workingDir, targetDir string) error {
+	if version != "PATH" {
+		return errNoMatch
+	}
+	if !p.allowPATH {
+		return errPATHNotAllowed
+	}
+	exe, err := exec.LookPath("cue")
+	if err != nil {
+		return fmt.Errorf("failed to find cue in PATH: %v", err)
+	}
+	// TODO: check GOOS and GOARCH for the result
+	return copyExecutableFile(exe, filepath.Join(targetDir, "cue"))
+}
+
+func copyExecutableFile(src, dst string) error {
+	if err := copy.File(src, dst); err != nil {
+		return fmt.Errorf("failed to copy %s to %s: %v", src, dst, err)
+	}
+	dir := filepath.Dir(dst)
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return fmt.Errorf("failed to get directory information for %s: %v", dir, err)
+	}
+	if !fi.IsDir() {
+		return fmt.Errorf("somehow %s is not a dir", dir)
+	}
+	perm := fi.Mode().Perm()
+	if err := os.Chmod(dst, perm); err != nil {
+		return fmt.Errorf("failed to set permissions of %s to %v: %v", dst, perm, err)
+	}
+	return nil
+}
+
+type semverResolver struct {
+	// bh helps with builds
+	bh *buildHelper
+
+	// urlTemplate is the template used to establish the URI of semver assets.
+	// See semverURLData for details of valid template fields
+	urlTemplate *template.Template
 
 	// goReleaserBuilders is a list of functions that map from a semver version
 	// to a goreleaser artefact name. This allows us to not be pinned to a
@@ -68,60 +142,19 @@ type versionResolver struct {
 	// resolve multiple potential matches simultaneously.
 	goReleaserBuilders []goReleaserBuilder
 
-	// semverURLTemplate is the template used to establish the URI of semver
-	// assets. See semverURLData for details of valid template fields
-	semverURLTemplate *template.Template
+	// oncesLock guards access to onces
+	oncesLock sync.Mutex
 
-	// allowPATH determines whether a CUE version of PATH is allowed or not
-	allowPATH bool
+	// onces captures the once-only semantics of each
+	// version we try to resolve
+	onces map[[32]byte]*sync.Once
 
 	debug bool
 }
 
-func (vr *versionResolver) debugf(format string, args ...interface{}) {
-	if vr.debug {
-		out := fmt.Sprintf(format, args...)
-		if out != "" && out[len(out)-1] != '\n' {
-			out += "\n"
-		}
-		fmt.Fprint(os.Stderr, out)
-	}
-}
+var _ resolver = (*semverResolver)(nil)
 
-func (vr *versionResolver) buildURL(version string, artefact string) (*url.URL, error) {
-	tmplData := semverURLData{
-		Version:  version,
-		Artefact: artefact,
-	}
-	var buf bytes.Buffer
-	if err := vr.semverURLTemplate.Execute(&buf, tmplData); err != nil {
-		return nil, fmt.Errorf("failed to execute template: %v", err)
-	}
-	u, err := url.Parse(buf.String())
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse %q as a URL: %v", buf.String(), err)
-	}
-	return u, nil
-}
-
-type semverURLData struct {
-	// Version is the version requested
-	Version string
-
-	// Artefact is the file name of the artefact being requested, which is
-	// built separately by the goReleaserBuilders
-	Artefact string
-}
-
-func newVersionResolver(allowPATH bool) (*versionResolver, error) {
-	ucd, err := os.UserCacheDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine user cache dir: %v", err)
-	}
-	cacheRoot := filepath.Join(ucd, "cue-unity")
-	if err := os.MkdirAll(cacheRoot, 0777); err != nil {
-		return nil, fmt.Errorf("failed to create unity CUE version cache dir: %v", err)
-	}
+func newSemverResolver(c resolverConfig) (resolver, error) {
 	urlTmpl := os.Getenv("UNITY_SEMVER_URL_TEMPLATE")
 	if urlTmpl == "" {
 		urlTmpl = "https://github.com/cuelang/cue/releases/download/{{.Version}}/{{.Artefact}}"
@@ -130,12 +163,11 @@ func newVersionResolver(allowPATH bool) (*versionResolver, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse semver URL template %q: %v", urlTmpl, err)
 	}
-	res := &versionResolver{
-		cacheRoot:         cacheRoot,
-		resolved:          make(map[string]resolvedVersion),
-		onces:             make(map[string]*sync.Once),
-		semverURLTemplate: t,
-		allowPATH:         allowPATH,
+	res := &semverResolver{
+		debug:       c.debug,
+		bh:          c.bh,
+		urlTemplate: t,
+		onces:       make(map[[32]byte]*sync.Once),
 		goReleaserBuilders: []goReleaserBuilder{
 			buildOldStyleGoreleaser(),
 			buildNewStyleGoreleaser(),
@@ -153,113 +185,129 @@ func newVersionResolver(allowPATH bool) (*versionResolver, error) {
 	return res, nil
 }
 
-type resolvedVersion struct {
-	path string
-	err  error
+// buildURL creates a *url.URL from the supplied version and artefact identifiers,
+// according to vr.semverURLTemplate. This allows us to have alternative sources
+// for semver
+func (sr *semverResolver) buildURL(version string, artefact string) (*url.URL, error) {
+	tmplData := semverURLData{
+		Version:  version,
+		Artefact: artefact,
+	}
+	var buf bytes.Buffer
+	if err := sr.urlTemplate.Execute(&buf, tmplData); err != nil {
+		return nil, fmt.Errorf("failed to execute template: %v", err)
+	}
+	u, err := url.Parse(buf.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %q as a URL: %v", buf.String(), err)
+	}
+	return u, nil
+}
+
+func (sr *semverResolver) buildHash(version string) *cache.Hash {
+	h := cache.NewHash("cue semver version")
+	h.Write([]byte("GOOS: " + sr.bh.targetGOOS))
+	h.Write([]byte("GOARCH: " + sr.bh.targetGOARCH))
+	h.Write([]byte(version))
+	return h
+}
+
+func (sr *semverResolver) resolve(version, dir, working, targetDir string) error {
+	if !semver.IsValid(version) {
+		return errNoMatch
+	}
+	h := sr.buildHash(version)
+	key := h.Sum()
+	ce, _, err := sr.bh.cache.GetFile(key)
+	if err == nil {
+		return copyExecutableFile(ce, filepath.Join(targetDir, "cue"))
+	}
+	sr.oncesLock.Lock()
+	once, ok := sr.onces[key]
+	if !ok {
+		once = new(sync.Once)
+		sr.onces[key] = once
+	}
+	sr.oncesLock.Unlock()
+	var onceerr error
+	once.Do(func() {
+		onceerr = sr.resolveSemverImpl(key, version)
+	})
+	if onceerr != nil {
+		return fmt.Errorf("failed to download %s: %v", version, onceerr)
+	}
+	ce, _, err = sr.bh.cache.GetFile(key)
+	if err != nil {
+		return fmt.Errorf("failed to resolve %s from cache after download", version)
+	}
+	return copyExecutableFile(ce, filepath.Join(targetDir, "cue"))
+}
+
+type resolverConfig struct {
+	bh        *buildHelper
+	allowPATH bool
+	debug     bool
+}
+
+func newVersionResolver(c resolverConfig) (*versionResolver, error) {
+	inits := []func(resolverConfig) (resolver, error){
+		newPathResolver,
+		newSemverResolver,
+	}
+	var resolvers []resolver
+	for i, rb := range inits {
+		r, err := rb(c)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build resolver %v: %v", i, err)
+		}
+		resolvers = append(resolvers, r)
+	}
+	res := &versionResolver{
+		resolvers: resolvers,
+	}
+	return res, nil
+}
+
+// debugf logs useful information about version resolution to stderr
+// in case debugging is enabled
+func (sr *semverResolver) debugf(format string, args ...interface{}) {
+	if sr.debug {
+		out := fmt.Sprintf(format, args...)
+		if out != "" && out[len(out)-1] != '\n' {
+			out += "\n"
+		}
+		fmt.Fprint(os.Stderr, out)
+	}
+}
+
+type semverURLData struct {
+	// Version is the version requested
+	Version string
+
+	// Artefact is the file name of the artefact being requested, which is
+	// built separately by the goReleaserBuilders
+	Artefact string
 }
 
 var (
 	errPATHNotAllowed = errors.New("CUE version of PATH not permitted")
 )
 
-// resolve interprets version as either:
-//
-// 1. semver version
-// 2. PATH (use cue from PATH)
-// 3. ...
-//
-// and returns a path to the cue binary corresponding to that
-// version. The path will sit within the unity cache.
-func (vr *versionResolver) resolve(version string) (path string, err error) {
-
-	// TODO add support for multiple version resolution algorithms
-	// Note these are just prelimnary checks aimed at identifying
-	// the type of version that we have been supplied, i.e. semver
-	// CL/patchset etc. Until we actually try and resolve such a version
-	// we can't know if it's valid or not
-	var resolve func(string) (string, error)
-	switch {
-	case version == "PATH":
-		if !vr.allowPATH {
-			return "", errPATHNotAllowed
-		}
-	case semver.IsValid(version):
-		resolve = vr.resolveSemverImpl
-	default:
-		return "", fmt.Errorf("unknown version format %q", version)
-	}
-
-	// Special case - no resolution required. Arguably
-	// this could live below but hey
-	if version == "PATH" {
-		path, err := exec.LookPath("cue")
-		if err != nil {
-			err = fmt.Errorf("failed to lookup cue in PATH: %v", err)
-		}
-		return path, err
-	}
-
-	vr.resolvedLock.Lock()
-	rv, resolved := vr.resolved[version]
-	vr.resolvedLock.Unlock()
-	if resolved {
-		return rv.path, rv.err
-	}
-
-	vr.oncesLock.Lock()
-	once, ok := vr.onces[version]
-	if !ok {
-		once = new(sync.Once)
-		vr.onces[version] = once
-	}
-	vr.oncesLock.Unlock()
-	did := false
-	once.Do(func() {
-		did = true
-		path, err = resolve(version)
-		vr.resolvedLock.Lock()
-		vr.resolved[version] = resolvedVersion{
-			path: path,
-			err:  err,
-		}
-		vr.resolvedLock.Unlock()
-	})
-	if did { // minor optimisation
-		return path, err
-	}
-	vr.resolvedLock.Lock()
-	rv, resolved = vr.resolved[version]
-	vr.resolvedLock.Unlock()
-	if !resolved {
-		panic("oh dear")
-	}
-	return rv.path, rv.err
-}
-
 // resolveSemverImpl is responsible for resolving a valid semver version to a
 // CUE version (if one exists) or an error
-func (vr *versionResolver) resolveSemverImpl(version string) (string, error) {
+func (sr *semverResolver) resolveSemverImpl(key [32]byte, version string) error {
 	// TODO: support semver sources other than "GitHub with artefacts built by
 	// goreleaser"
 
-	versionPath := filepath.Join(vr.cacheRoot, cacheVersions, version)
-	if err := os.MkdirAll(versionPath, 0777); err != nil {
-		return "", fmt.Errorf("failed to mkdir %s: %v", versionPath, err)
-	}
-	cuePath := filepath.Join(versionPath, "cue")
-	if _, err := os.Stat(cuePath); err == nil {
-		return cuePath, nil
-	}
-
 	var urls []*url.URL
-	for _, gbs := range vr.goReleaserBuilders {
+	for _, gbs := range sr.goReleaserBuilders {
 		a, err := gbs(version, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
-			return "", fmt.Errorf("failed to resolve")
+			return fmt.Errorf("failed to resolve")
 		}
-		u, err := vr.buildURL(version, a)
+		u, err := sr.buildURL(version, a)
 		if err != nil {
-			return "", fmt.Errorf("failed to build URL for version %q artefact %q: %v", version, a, err)
+			return fmt.Errorf("failed to build URL for version %q artefact %q: %v", version, a, err)
 		}
 		urls = append(urls, u)
 	}
@@ -279,9 +327,10 @@ func (vr *versionResolver) resolveSemverImpl(version string) (string, error) {
 			var err error
 			switch u.Scheme {
 			case "file":
-				vr.debugf("open file %s", u.Path)
+				sr.debugf("open file %s", u.Path)
 				body, err = os.Open(u.Path)
 			case "https":
+				sr.debugf("get %s", u.String())
 				resp, geterr := http.Get(u.String())
 				err = geterr
 				if err == nil {
@@ -312,11 +361,11 @@ func (vr *versionResolver) resolveSemverImpl(version string) (string, error) {
 		}
 	}
 	if successCount != 1 {
-		return "", fmt.Errorf("failed to resolve %q to a single successful response", version)
+		return fmt.Errorf("failed to resolve %q to a single successful response", version)
 	}
 	archive, err := gzip.NewReader(resp.body)
 	if err != nil {
-		return "", fmt.Errorf("failed to create gzip reader for response: %v", err)
+		return fmt.Errorf("failed to create gzip reader for response: %v", err)
 	}
 	t := tar.NewReader(archive)
 	foundCue := false
@@ -326,25 +375,24 @@ func (vr *versionResolver) resolveSemverImpl(version string) (string, error) {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			return "", fmt.Errorf("failed to read tar archive: %v", err)
+			return fmt.Errorf("failed to read tar archive: %v", err)
 		}
 		if h.Name == "cue" {
 			foundCue = true
-			lr := io.LimitReader(t, h.Size)
-			// TODO probably need lockedfile here to safely write exclusively
-			of, err := os.OpenFile(cuePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0777)
-			if err != nil {
-				return "", fmt.Errorf("failed to open %v for writing: %v", cuePath, err)
+			cueBin := make([]byte, h.Size)
+			if _, err := io.ReadFull(t, cueBin); err != nil {
+				return fmt.Errorf("failed to read cue from tar archive: %v", err)
 			}
-			if n, err := io.Copy(of, lr); err != nil || n != h.Size {
-				return "", fmt.Errorf("failed to write output to %v: wrote %v of %v, with err: %v", cuePath, n, h.Size, err)
+			if err := sr.bh.cache.PutBytes(key, cueBin); err != nil {
+				return fmt.Errorf("failed to write cue to the cache: %v", err)
 			}
+			break
 		}
 	}
 	if !foundCue {
-		return "", fmt.Errorf("%s did not contain cue binary", resp.url)
+		return fmt.Errorf("%s did not contain cue binary", resp.url)
 	}
-	return cuePath, nil
+	return nil
 }
 
 func buildOldStyleGoreleaser() func(version, goos, goarch string) (string, error) {

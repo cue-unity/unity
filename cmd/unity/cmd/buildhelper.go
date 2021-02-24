@@ -1,3 +1,17 @@
+// Copyright 2021 The CUE Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cmd
 
 import (
@@ -17,6 +31,10 @@ import (
 )
 
 type buildHelper struct {
+	// userCacheDir is the directory within which we can create subdirectories
+	// that cache unity-related artefacts
+	userCacheDir string
+
 	// cache is the build artefact cache we use to speed up the use of cue/unity
 	// binaries
 	cache *cache.Cache
@@ -30,11 +48,20 @@ type buildHelper struct {
 
 // newBuildHelper creates a new build helper.
 func newBuildHelper() (*buildHelper, error) {
-	vcache, err := openUnityCache()
+	ucd, err := os.UserCacheDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to determine user cache dir: %v", err)
+	}
+	binCache := filepath.Join(ucd, "unity", "bin")
+	if err := os.MkdirAll(binCache, 0777); err != nil {
+		return nil, fmt.Errorf("failed to ensure %s exists: %v", binCache, err)
+	}
+	vcache, err := cache.Open(binCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open cache at %s: %v", binCache, err)
 	}
 	res := &buildHelper{
+		userCacheDir: ucd,
 		cache:        vcache,
 		targetGOOS:   runtime.GOOS,
 		targetGOARCH: runtime.GOARCH,
@@ -76,22 +103,6 @@ func (bh *buildHelper) targetDocker(dockerImage string) error {
 	bh.targetGOOS = fields[0]
 	bh.targetGOARCH = fields[1]
 	return nil
-}
-
-func openUnityCache() (*cache.Cache, error) {
-	ucd, err := os.UserCacheDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine user cache dir: %v", err)
-	}
-	binCache := filepath.Join(ucd, "unity", "bin")
-	if err := os.MkdirAll(binCache, 0777); err != nil {
-		return nil, fmt.Errorf("failed to ensure %s exists: %v", binCache, err)
-	}
-	vcache, err := cache.Open(binCache)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open cache at %s: %v", binCache, err)
-	}
-	return vcache, nil
 }
 
 // pathToSelf returns the directory within which a compiled version of self

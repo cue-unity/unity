@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cue-sh/unity/internal/cuetest"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"
 )
@@ -95,8 +96,8 @@ func TestScripts(t *testing.T) {
 					// Augment the environment
 					e.Vars = append(e.Vars,
 						"PATH="+path,
-						"HOME="+home,
-						"TMPDIR="+tmp,
+						homeEnvName()+"="+home,
+						tempEnvName()+"="+tmp,
 						"UNITY_SEMVER_URL_TEMPLATE=file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"),
 					)
 					if v == "unsafe" {
@@ -127,6 +128,7 @@ func TestScripts(t *testing.T) {
 					"git":   runCmd("git"),
 					"unity": runCmd("unity"),
 				},
+				Condition: cuetest.Condition,
 			})
 		})
 	}
@@ -243,4 +245,26 @@ func (h *helper) gitDir(dir string, args ...string) string {
 		panic(err)
 	}
 	return res
+}
+
+func homeEnvName() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "USERPROFILE"
+	case "plan9":
+		return "home"
+	default:
+		return "HOME"
+	}
+}
+
+func tempEnvName() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "TMP"
+	case "plan9":
+		return "TMPDIR" // actually plan 9 doesn't have one at all but this is fine
+	default:
+		return "TMPDIR"
+	}
 }

@@ -25,7 +25,6 @@ import (
 	"cuelang.org/go/cue/errors"
 	"github.com/cue-sh/unity"
 	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -77,23 +76,6 @@ Need to document this command
 
 func testDef(c *Command, args []string) error {
 	debug := flagDebug.Bool(c)
-
-	vr, err := newVersionResolver(!flagTestNoPath.Bool(c))
-	vr.debug = debug
-	if err != nil {
-		return fmt.Errorf("could not create version resolver: %v", err)
-	}
-	var eg errgroup.Group
-	for _, v := range args {
-		v := v
-		eg.Go(func() error {
-			_, err := vr.resolve(v)
-			return err
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("failed to pre-resolve versions %v: %v", args, err)
-	}
 
 	var r cue.Runtime
 
@@ -173,6 +155,17 @@ func testDef(c *Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to derive path to self: %v", err)
 		}
+	}
+
+	// Note: we can't pre-resolve any versions here because that needs to happen
+	// in the context of a project for go.mod versions (at least)
+	vr, err := newVersionResolver(resolverConfig{
+		bh:        bh,
+		allowPATH: !flagTestNoPath.Bool(c),
+		debug:     debug,
+	})
+	if err != nil {
+		return fmt.Errorf("could not create version resolver: %v", err)
 	}
 
 	mt := newModuleTester(moduleTester{

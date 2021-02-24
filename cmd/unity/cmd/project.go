@@ -268,16 +268,6 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 		return nil, fmt.Errorf("failed to decode manifest: %v", err)
 	}
 
-	// Pre-validate the CUE versions
-	//
-	// TODO: make concurrent
-	for _, v := range manifest.Versions {
-		_, err := mt.versionResolver.resolve(v)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Pre-validate that none of the testscript files we are going to validate
 	// have a module/ path in their archive
 	scripts, err := filepath.Glob(filepath.Join(manifestDir, "*.txt"))
@@ -406,8 +396,11 @@ type module struct {
 
 func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err error) {
 	// TODO: we really shouldn't need to be resolving this again
-	cuePath, err := m.tester.versionResolver.resolve(version)
+	cueDir, err := ioutil.TempDir("", "unity-run-dir")
 	if err != nil {
+		return fmt.Errorf("failed to create temp directory for run: %v", err)
+	}
+	if err := m.tester.versionResolver.resolve(version, m.root, cueDir, cueDir); err != nil {
 		return err
 	}
 	// Create a pristine copy of the git root with no history
@@ -443,7 +436,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		gitRoot:       td,
 		relPath:       m.relPath,
 		testerRelPath: m.testerRelPath,
-		cuePath:       cuePath,
+		cuePath:       filepath.Join(cueDir, "cue"),
 		version:       version,
 		update:        mt.update,
 	}
