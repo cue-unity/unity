@@ -19,29 +19,33 @@ import (
 	"strings"
 )
 
-type gerritRefResolver struct {
+const (
+	commitVersionPrefix = "commit:"
+)
+
+type commitResolver struct {
 	cc *commonCUEResolver
 }
 
-func newGerritRefResolver(c resolverConfig) (resolver, error) {
-	res := &gerritRefResolver{
+func newCommitResolver(c resolverConfig) (resolver, error) {
+	res := &commitResolver{
 		cc: c.commonCUEResolver,
 	}
 	return res, nil
 }
 
-func (g *gerritRefResolver) resolve(version, _, _, targetDir string) error {
-	if !strings.HasPrefix(version, "refs/changes/") {
+func (g *commitResolver) resolve(version, _, _, targetDir string) error {
+	if !strings.HasPrefix(version, commitVersionPrefix) {
 		return errNoMatch
 	}
+	version = strings.TrimPrefix(version, commitVersionPrefix)
 	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) error {
 		// fetch the version
-		if _, err := gitDir(c.dir, "fetch", cueGitSource, version); err != nil {
-			return fmt.Errorf("failed to fetch %s: %v", version, err)
+		if _, err := gitDir(c.dir, "fetch", "origin"); err != nil {
+			return fmt.Errorf("failed to fetch origin: %v", err)
 		}
-		// move to FETCH_HEAD
-		if _, err := gitDir(c.dir, "checkout", "FETCH_HEAD"); err != nil {
-			return fmt.Errorf("failed to checkout FETCH_HEAD: %v", err)
+		if _, err := gitDir(c.dir, "checkout", version); err != nil {
+			return fmt.Errorf("failed to checkout %s: %v", version, err)
 		}
 		return nil
 	})
