@@ -128,10 +128,15 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 			fmt.Fprintln(os.Stderr, tr.err)
 		}
 	}
+	out := os.Stderr
+	if mt.verbose {
+		out = os.Stdout
+	}
 	for _, tr := range tested {
-		if tr.err != nil && errors.Is(tr.err, errTestFail) {
-			sawError = true
-			fmt.Fprint(os.Stderr, tr.log.String())
+		hasErr := tr.err != nil && errors.Is(tr.err, errTestFail)
+		sawError = sawError || hasErr
+		if hasErr || mt.verbose {
+			fmt.Fprint(out, tr.log.String())
 		}
 	}
 	if sawError {
@@ -439,6 +444,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		cuePath:       filepath.Join(cueDir, "cue"),
 		version:       version,
 		update:        mt.update,
+		verbose:       mt.verbose,
 	}
 
 	if mt.unsafe {
@@ -456,6 +462,7 @@ type runModuleInfo struct {
 	cuePath       string
 	version       string
 	update        bool
+	verbose       bool
 }
 
 func runModule(log io.Writer, info runModuleInfo) (err error) {
@@ -486,7 +493,7 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 		},
 	}
 	// TODO: improve logging/printing/errors when we make things concurrent
-	r := newRunT("", nil)
+	r := newRunT("", nil, info.verbose)
 	func() {
 		defer func() {
 			switch recover() {
@@ -557,6 +564,9 @@ func dockerRunModule(image string, log io.Writer, info runModuleInfo) (err error
 	}
 	if info.update {
 		args = append(args, "--update")
+	}
+	if info.verbose {
+		args = append(args, "--verbose")
 	}
 	// TODO remove the multi-writer
 	var buf bytes.Buffer

@@ -9,6 +9,11 @@ git commit -m 'Initial commit'
 unity test
 ! stdout .+
 
+# Test verbose output
+unity test --verbose
+stdout 'x: 5'
+stdout 'PASS'
+
 -- .unquote --
 cue.mod/tests/basic1.txt
 cue.mod/tests/basic2.txt

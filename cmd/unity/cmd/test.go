@@ -181,8 +181,8 @@ func testDef(c *Command, args []string) error {
 		update:          flagTestUpdate.Bool(c),
 		staged:          flagTestStaged.Bool(c),
 		ignoreDirty:     flagTestIgnoreDirty.Bool(c),
+		verbose:         flagTestVerbose.Bool(c),
 	})
-	mt.verbose = flagTestVerbose.Bool(c)
 
 	if flagTestCorpus.Bool(c) {
 		return testCorpus(c, mt, args)

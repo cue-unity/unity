@@ -55,11 +55,12 @@ type runT struct {
 	failed   bool
 }
 
-func newRunT(name string, parent *runT) *runT {
+func newRunT(name string, parent *runT, verbose bool) *runT {
 	return &runT{
-		name:   name,
-		parent: parent,
-		log:    new(bytes.Buffer),
+		name:    name,
+		parent:  parent,
+		log:     new(bytes.Buffer),
+		verbose: verbose,
 	}
 }
 
@@ -87,7 +88,7 @@ func (r *runT) FailNow() {
 }
 
 func (r *runT) Run(n string, f func(t testscript.T)) {
-	child := newRunT(n, r)
+	child := newRunT(n, r, r.verbose)
 	r.children = append(r.children, child)
 	defer func() {
 		switch err := recover(); err {

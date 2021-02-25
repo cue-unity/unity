@@ -29,6 +29,7 @@ const (
 	flagDockerCUEPath       flagName = "cuePath"
 	flagDockerVersion       flagName = "version"
 	flagDockerUpdate        flagName = "update"
+	flagDockerVerbose       flagName = "verbose"
 )
 
 // newTestCmd creates a new test command
@@ -48,6 +49,7 @@ func newDockerCmd(c *Command) *cobra.Command {
 	cmd.Flags().String(string(flagDockerCUEPath), "", "the path to the CUE binary to use")
 	cmd.Flags().String(string(flagDockerVersion), "", "the version being tested")
 	cmd.Flags().Bool(string(flagDockerUpdate), false, "update test archives when cmp fails")
+	cmd.Flags().Bool(string(flagDockerVerbose), false, "run in verbose mode")
 	return cmd
 }
 
@@ -62,6 +64,7 @@ func dockerDef(c *Command, args []string) error {
 			cuePath:       flagDockerCUEPath.String(c),
 			version:       flagDockerVersion.String(c),
 			update:        flagDockerUpdate.Bool(c),
+			verbose:       flagDockerVerbose.Bool(c),
 		},
 	)
 }
