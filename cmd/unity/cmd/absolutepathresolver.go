@@ -31,6 +31,8 @@ const (
 )
 
 type absolutePathResolver struct {
+	config resolverConfig
+
 	// roots is the builds we have completed, keyed by the module root.
 	// We only attempt a build once per unity run
 	roots map[string]*sync.Once
@@ -41,7 +43,8 @@ type absolutePathResolver struct {
 
 func newAbsolutePathResolver(c resolverConfig) (resolver, error) {
 	res := &absolutePathResolver{
-		roots: make(map[string]*sync.Once),
+		config: c,
+		roots:  make(map[string]*sync.Once),
 	}
 	return res, nil
 }
@@ -85,10 +88,11 @@ func (a *absolutePathResolver) resolve(version, dir, workingDir, targetDir strin
 }
 
 func (a *absolutePathResolver) buildDir(dir, target string) error {
-	build := exec.Command("go", "build", "-o", target, "cuelang.org/go/cmd/cue")
-	build.Dir = dir
-	if out, err := build.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to run [%v] in %s: %v\n%s", build, dir, err, out)
+	cmd := exec.Command("go", "build", "-o", target, "cuelang.org/go/cmd/cue")
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), a.config.bh.buildEnv()...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to run [%v] in %s: %v\n%s", cmd, dir, err, out)
 	}
 	return nil
 }
