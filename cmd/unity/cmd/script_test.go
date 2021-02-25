@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -33,12 +32,6 @@ const (
 	tmpDirName  = ".tmp-dir"
 )
 
-func TestMain(m *testing.M) {
-	os.Exit(testscript.RunMain(m, map[string]func() int{
-		"unity": MainTest,
-	}))
-}
-
 // TestScripts runs testscript txtar tests that test unity
 func TestScripts(t *testing.T) {
 	cwd, err := os.Getwd()
@@ -47,21 +40,25 @@ func TestScripts(t *testing.T) {
 	}
 	// selfDir is the path that contains the unity command for running
 	// in tests
-	selfDir, ok, err := pathToSelf(cwd)
+	bh, err := newBuildHelper()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ok {
-		t.Fatalf("pathToSelf should not be temporary in a test scenario")
+	defer bh.cache.Trim()
+	if err := bh.targetDocker(dockerImage); err != nil {
+		t.Fatal(err)
 	}
-	// go install the required version of CUE to ensure that CUE versions
-	// of PATH specified in unity tests run consistently. Put this
-	// alongside unity in selfDir
-	cmd := exec.Command("go", "install", "cuelang.org/go/cmd/cue")
-	cmd.Env = append(os.Environ(), "GOBIN="+selfDir)
-	out, err := cmd.CombinedOutput()
+	// This will build self (i.e. unity) into $modroot/.bin
+	selfPath, err := bh.pathToSelf(cwd, "", true)
 	if err != nil {
-		t.Fatalf("failed to run %v: %v\n%s", cmd, err, out)
+		t.Fatal(err)
+	}
+	selfDir := filepath.Dir(selfPath)
+	cueTarget := filepath.Join(selfDir, "cue")
+	// install the required version of CUE to ensure that CUE versions of PATH
+	// specified in unity tests run consistently for the target docker image
+	if err := bh.buildAndCache(cwd, cueTarget, "cuelang.org/go/cmd/cue"); err != nil {
+		t.Fatal(err)
 	}
 
 	for _, v := range []string{"safe", "unsafe"} {
@@ -97,7 +94,6 @@ func TestScripts(t *testing.T) {
 
 					// Augment the environment
 					e.Vars = append(e.Vars,
-						"UNITY_TEST_PATH_TO_SELF="+selfDir,
 						"PATH="+path,
 						"HOME="+home,
 						"TMPDIR="+tmp,
@@ -127,8 +123,9 @@ func TestScripts(t *testing.T) {
 					return nil
 				},
 				Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-					"cue": runCmd("cue"),
-					"git": runCmd("git"),
+					"cue":   runCmd("cue"),
+					"git":   runCmd("git"),
+					"unity": runCmd("unity"),
 				},
 			})
 		})
