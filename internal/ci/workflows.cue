@@ -52,6 +52,7 @@ test: _#bashWorkflow & {
 				_#cacheGoModules,
 				_#setGoBuildTags & {
 					_#tags: "long"
+					if:     "${{ \(_#isMain) }}"
 				},
 				_#goModVerify,
 				_#goGenerate,
