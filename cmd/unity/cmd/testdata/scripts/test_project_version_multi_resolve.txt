@@ -8,8 +8,8 @@ git add -A
 git commit -m 'Initial commit'
 
 # Test
-! unity test v0.3.0-beta.5
-stderr 'failed to pre-resolve versions \[v0\.3\.0-beta\.5\]: failed to resolve "v0\.3\.0-beta\.5" to a single successful response'
+! unity --debug test
+stderr 'failed to resolve "v0\.3\.0-beta\.5" to a single successful response'
 
 -- cue.mod/module.cue --
 module: "mod.com"
@@ -17,5 +17,5 @@ module: "mod.com"
 -- cue.mod/tests/tests.cue --
 package tests
 
-Versions: ["v0.3.0-alpha6"]
+Versions: ["v0.3.0-beta.5"]
 
