@@ -42,6 +42,7 @@ func newVersionResolver(c resolverConfig) (*versionResolver, error) {
 		newPathResolver,
 		newSemverResolver,
 		newAbsolutePathResolver,
+		newGerritRefResolver,
 	}
 	var resolvers []resolver
 	for i, rb := range inits {

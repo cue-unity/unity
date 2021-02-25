@@ -1,3 +1,17 @@
+// Copyright 2021 The CUE Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cmd
 
 import (
@@ -15,7 +29,6 @@ import (
 	"text/template"
 
 	"cuelang.org/go/cue/errors"
-	"github.com/rogpeppe/go-internal/cache"
 	"golang.org/x/mod/semver"
 )
 
@@ -95,19 +108,11 @@ func (sr *semverResolver) buildURL(version string, artefact string) (*url.URL, e
 	return u, nil
 }
 
-func (sr *semverResolver) buildHash(version string) *cache.Hash {
-	h := cache.NewHash("cue semver version")
-	h.Write([]byte("GOOS: " + sr.config.bh.targetGOOS))
-	h.Write([]byte("GOARCH: " + sr.config.bh.targetGOARCH))
-	h.Write([]byte(version))
-	return h
-}
-
 func (sr *semverResolver) resolve(version, dir, working, targetDir string) error {
 	if !semver.IsValid(version) {
 		return errNoMatch
 	}
-	h := sr.buildHash(version)
+	h := sr.config.bh.cueVersionHash(version)
 	key := h.Sum()
 	ce, _, err := sr.config.bh.cache.GetFile(key)
 	if err == nil {

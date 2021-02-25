@@ -30,6 +30,15 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+const (
+	// clonesDir is the subdirectory within the user cache dir in which various
+	// project clones are maintained
+	clonesDir = "clones"
+
+	// cloneLockfile is the filname suffix given to lock files of clones.
+	cloneLockfile = ".lock"
+)
+
 type buildHelper struct {
 	// userCacheDir is the directory within which we can create subdirectories
 	// that cache unity-related artefacts
@@ -67,6 +76,23 @@ func newBuildHelper() (*buildHelper, error) {
 		targetGOARCH: runtime.GOARCH,
 	}
 	return res, nil
+}
+
+// cueCloneDir returns the path at which, within the user cache dir, the clone
+// of CUE is maintained.
+func (bh *buildHelper) cueCloneDir() string {
+	return filepath.Join(bh.userCacheDir, clonesDir, "cue")
+}
+
+// cueVersionHash is called by various resolvers to create a hash
+// based on a version. The various callers are responsible for
+// ensuring that version does/doesn't clash when expected
+func (bh *buildHelper) cueVersionHash(version string) *cache.Hash {
+	h := cache.NewHash("cue version")
+	h.Write([]byte("GOOS: " + bh.targetGOOS))
+	h.Write([]byte("GOARCH: " + bh.targetGOARCH))
+	h.Write([]byte(version))
+	return h
 }
 
 // targetDocker updates bh to target the supplied docker image. The docker

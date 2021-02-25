@@ -15,9 +15,11 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -62,6 +64,19 @@ func TestScripts(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var env struct {
+		GOCACHE    string
+		GOMODCACHE string
+	}
+	goenv := exec.Command("go", "env", "-json")
+	out, err := goenv.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(out, &env); err != nil {
+		t.Fatal(err)
+	}
+
 	for _, v := range []string{"safe", "unsafe"} {
 		v := v
 		t.Run(v, func(t *testing.T) {
@@ -95,6 +110,8 @@ func TestScripts(t *testing.T) {
 
 					// Augment the environment
 					e.Vars = append(e.Vars,
+						"GOCACHE="+env.GOCACHE,
+						"GOMODCACHE="+env.GOMODCACHE,
 						"PATH="+path,
 						homeEnvName()+"="+home,
 						tempEnvName()+"="+tmp,
