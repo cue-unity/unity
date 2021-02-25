@@ -323,6 +323,7 @@ func (bh *buildHelper) buildAndCache(buildDir, target, main string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open compiled version of self")
 	}
+	defer targetFile.Close()
 	// Write back to the cache
 	if _, _, err := bh.cache.Put(cacheHash.Sum(), targetFile); err != nil {
 		return fmt.Errorf("failed to write compiled version of self to the cache: %v", err)

@@ -1,0 +1,45 @@
+# Verify that we can resolve a CUE version that is a Gerrit ref
+
+[!long] skip 'We clone the actual CUE repo here so this is a long test'
+
+# Initial setup
+exec go mod tidy
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test
+unity test go.mod
+! stdout .+
+
+-- .unquote --
+cue.mod/tests/basic.txt
+-- go.mod --
+module blah
+
+go 1.16
+
+require cuelang.org/go v0.3.0-beta.5
+-- tools.go --
+// +build tools
+
+package tools
+
+import _ "cuelang.org/go/cmd/cue"
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+-- cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5

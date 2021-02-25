@@ -50,13 +50,12 @@ func newCommonCUEREsolver(c resolverConfig) (*commonCUEResolver, error) {
 	return res, nil
 }
 
-func (c *commonCUEResolver) resolve(version, targetDir string, strategy func(*commonCUEResolver) error) error {
+func (c *commonCUEResolver) resolve(version, targetDir string, strategy func(*commonCUEResolver) (string, error)) error {
 	target := filepath.Join(targetDir, "cue")
 
 	// Check whether we have a cache hit
 	h := c.config.bh.cueVersionHash(version)
-	key := h.Sum()
-	ce, _, err := c.config.bh.cache.GetFile(key)
+	ce, _, err := c.config.bh.cache.GetFile(h.Sum())
 	if err == nil {
 		return copyExecutableFile(ce, target)
 	}
@@ -75,9 +74,11 @@ func (c *commonCUEResolver) resolve(version, targetDir string, strategy func(*co
 		}
 	}
 
-	if err := strategy(c); err != nil {
+	version, err = strategy(c)
+	if err != nil {
 		return err
 	}
+	h = c.config.bh.cueVersionHash(version)
 
 	// build
 	buildDir := filepath.Join(c.dir, "cmd", "cue")
@@ -90,11 +91,12 @@ func (c *commonCUEResolver) resolve(version, targetDir string, strategy func(*co
 	}
 	buildTarget := filepath.Join(buildDir, "cue")
 
-	f, err := os.Open(buildTarget)
+	targetFile, err := os.Open(buildTarget)
 	if err != nil {
 		return fmt.Errorf("failed to open build result %s: %v", buildTarget, err)
 	}
-	if _, _, err := c.config.bh.cache.Put(key, f); err != nil {
+	defer targetFile.Close()
+	if _, _, err := c.config.bh.cache.Put(h.Sum(), targetFile); err != nil {
 		return fmt.Errorf("failed to write cue to the cache: %v", err)
 	}
 
