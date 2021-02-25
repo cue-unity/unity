@@ -23,6 +23,9 @@ type gerritRefResolver struct {
 	cc *commonCUEResolver
 }
 
+// commitResolver resolves a "refs/changes/..." CL patchset reference to a
+// change from the CUE Gerrit server. The result is stored in the unity user
+// cache directory.
 func newGerritRefResolver(c resolverConfig) (resolver, error) {
 	res := &gerritRefResolver{
 		cc: c.commonCUEResolver,
@@ -34,15 +37,15 @@ func (g *gerritRefResolver) resolve(version, _, _, targetDir string) error {
 	if !strings.HasPrefix(version, "refs/changes/") {
 		return errNoMatch
 	}
-	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) error {
+	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) (string, error) {
 		// fetch the version
 		if _, err := gitDir(c.dir, "fetch", cueGitSource, version); err != nil {
-			return fmt.Errorf("failed to fetch %s: %v", version, err)
+			return "", fmt.Errorf("failed to fetch %s: %v", version, err)
 		}
 		// move to FETCH_HEAD
 		if _, err := gitDir(c.dir, "checkout", "FETCH_HEAD"); err != nil {
-			return fmt.Errorf("failed to checkout FETCH_HEAD: %v", err)
+			return "", fmt.Errorf("failed to checkout FETCH_HEAD: %v", err)
 		}
-		return nil
+		return version, nil
 	})
 }

@@ -23,6 +23,9 @@ const (
 	commitVersionPrefix = "commit:"
 )
 
+// commitResolver resolves a "commit:$hash" version to a commit from the master
+// branch of the CUE repository. The result is stored in the unity user cache
+// directory.
 type commitResolver struct {
 	cc *commonCUEResolver
 }
@@ -39,14 +42,19 @@ func (g *commitResolver) resolve(version, _, _, targetDir string) error {
 		return errNoMatch
 	}
 	version = strings.TrimPrefix(version, commitVersionPrefix)
-	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) error {
-		// fetch the version
-		if _, err := gitDir(c.dir, "fetch", "origin"); err != nil {
-			return fmt.Errorf("failed to fetch origin: %v", err)
+	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) (string, error) {
+		if _, err := gitDir(c.dir, "checkout", version); err != nil {
+			if _, err := gitDir(c.dir, "fetch", "origin"); err != nil {
+				return "", fmt.Errorf("failed to fetch origin: %v", err)
+			}
 		}
 		if _, err := gitDir(c.dir, "checkout", version); err != nil {
-			return fmt.Errorf("failed to checkout %s: %v", version, err)
+			return "", fmt.Errorf("failed to checkout %s: %v", version, err)
 		}
-		return nil
+		version, err := gitDir(c.dir, "rev-parse", "HEAD")
+		if err != nil {
+			return "", fmt.Errorf("failed to rev-parse HEAD: %v", err)
+		}
+		return version, nil
 	})
 }

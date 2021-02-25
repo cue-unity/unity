@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 )
 
+// pathResolver resolves the CUE version "PATH" to the cue binary that is
+// on PATH.
 type pathResolver struct {
 	config resolverConfig
 }

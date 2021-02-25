@@ -15,36 +15,26 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
-	"sync"
 )
 
 const (
-	// absolutePathBin is the name of the directory that will be used
+	// commonPathBin is the name of the directory that will be used
 	// at the module root of the directory specified in the absolute path
 	// version
-	absolutePathBin = ".unity-bin"
+	commonPathBin = ".unity-bin"
 )
 
+// absolutePathResolver resolves a CUE version that is an absolute directory
+// path, as uses the Go modules within that directory to resolve a CUE version.
+// cue is then built within a .unity-bin directory at the Go module root
 type absolutePathResolver struct {
-	config resolverConfig
-
-	// roots is the builds we have completed, keyed by the module root.
-	// We only attempt a build once per unity run
-	roots map[string]*sync.Once
-
-	// rootsLock guards roots
-	rootsLock sync.Mutex
+	cp *commonPathResolver
 }
 
 func newAbsolutePathResolver(c resolverConfig) (resolver, error) {
 	res := &absolutePathResolver{
-		config: c,
-		roots:  make(map[string]*sync.Once),
+		cp: c.commonPathResolver,
 	}
 	return res, nil
 }
@@ -53,46 +43,5 @@ func (a *absolutePathResolver) resolve(version, dir, workingDir, targetDir strin
 	if !filepath.IsAbs(version) {
 		return errNoMatch
 	}
-	// Find the module root
-	goenv := exec.Command("go", "env", "GOMOD")
-	goenv.Dir = version
-	out, err := goenv.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to determine module root via [%v] in %s: %v\n%s", goenv, version, err, out)
-	}
-	gomod := strings.TrimSpace(string(out))
-	if gomod == "" || gomod == os.DevNull {
-		return fmt.Errorf("failed to resolve module root within %s: resolve %q", version, gomod)
-	}
-	root := filepath.Dir(gomod)
-	bin := filepath.Join(root, absolutePathBin)
-	if err := os.Mkdir(bin, 0777); err != nil {
-		return fmt.Errorf("failed to create %s: %v", bin, err)
-	}
-	buildTarget := filepath.Join(bin, "cue")
-	target := filepath.Join(targetDir, "cue")
-	a.rootsLock.Lock()
-	once, ok := a.roots[root]
-	if !ok {
-		once = new(sync.Once)
-		a.roots[root] = once
-	}
-	var onceerr error
-	once.Do(func() {
-		onceerr = a.buildDir(version, buildTarget)
-	})
-	if onceerr != nil {
-		return fmt.Errorf("failed to build CUE in %s: %v", root, onceerr)
-	}
-	return copyExecutableFile(buildTarget, target)
-}
-
-func (a *absolutePathResolver) buildDir(dir, target string) error {
-	cmd := exec.Command("go", "build", "-o", target, "cuelang.org/go/cmd/cue")
-	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), a.config.bh.buildEnv()...)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to run [%v] in %s: %v\n%s", cmd, dir, err, out)
-	}
-	return nil
+	return a.cp.resolve(version, targetDir)
 }

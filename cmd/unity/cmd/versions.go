@@ -42,13 +42,19 @@ func newVersionResolver(c resolverConfig) (*versionResolver, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create common CUE resolver: %v", err)
 	}
+	cp, err := newCommonPathResolver(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create common path resolver: %v", err)
+	}
 	c.commonCUEResolver = cc
+	c.commonPathResolver = cp
 	inits := []func(resolverConfig) (resolver, error){
 		newPathResolver,
 		newSemverResolver,
 		newAbsolutePathResolver,
 		newGerritRefResolver,
 		newCommitResolver,
+		newGoModResolver,
 	}
 	var resolvers []resolver
 	for i, rb := range inits {
@@ -93,10 +99,11 @@ func (vr *versionResolver) resolve(version, dir, working, targetDir string) erro
 }
 
 type resolverConfig struct {
-	bh                *buildHelper
-	allowPATH         bool
-	debug             bool
-	commonCUEResolver *commonCUEResolver
+	bh                 *buildHelper
+	allowPATH          bool
+	debug              bool
+	commonCUEResolver  *commonCUEResolver
+	commonPathResolver *commonPathResolver
 }
 
 // debugf logs useful information about version resolution to stderr

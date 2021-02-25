@@ -32,6 +32,9 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+// semverResolver resolves valid semver CUE versions to official builds
+// that are released onto GitHub. The results of GitHub downloads are cached
+// in the user cache directory.
 type semverResolver struct {
 	config resolverConfig
 
