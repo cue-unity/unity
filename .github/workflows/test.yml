@@ -38,7 +38,8 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.go-version }}-go-${{ hashFiles('**/go.sum')
           }}
         restore-keys: ${{ runner.os }}-${{ matrix.go-version }}-go-
-    - name: Set go build tags
+    - if: ${{ github.ref == 'refs/heads/main' }}
+      name: Set go build tags
       run: go env -w GOFLAGS=-tags=long
     - name: go mod verify
       run: go mod verify
