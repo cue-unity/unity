@@ -61,6 +61,7 @@ test: _#bashWorkflow & {
 				_#staticcheck,
 				_#goModTidy,
 				_#checkGitClean,
+				_#runUnity,
 			]
 		}
 	}
@@ -169,6 +170,11 @@ _#goTestRace: _#step & {
 _#checkGitClean: _#step & {
 	name: "Check that git is clean post generate and tests"
 	run:  "test -z \"$(git status --porcelain)\" || (git status; git diff; false)"
+}
+
+_#runUnity: _#step & {
+	name: "Run unity"
+	run:  "./_scripts/runUnity.sh"
 }
 
 _#branchRefPrefix: "refs/heads/"

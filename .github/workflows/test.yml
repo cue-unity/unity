@@ -56,3 +56,5 @@ jobs:
       run: go mod tidy
     - name: Check that git is clean post generate and tests
       run: test -z "$(git status --porcelain)" || (git status; git diff; false)
+    - name: Run unity
+      run: ./_scripts/runUnity.sh
