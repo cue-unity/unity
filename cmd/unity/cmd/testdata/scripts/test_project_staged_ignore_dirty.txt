@@ -16,6 +16,18 @@ stderr 'working tree has untracked files; stage changes and use --staged or use 
 unity test --ignore-dirty
  ! stdout .+
 
+# Make a modification
+cp x.cue.new x.cue
+
+# Untracked only and modified
+! unity test
+stderr 'working tree has untracked files; stage changes and use --staged or use --ignore-dirty'
+
+# Ignore untracked only
+exec git status
+unity test --ignore-dirty
+ ! stdout .+
+
 # Stage some changes
 git add cue.mod/module.cue
 
@@ -73,4 +85,9 @@ Versions: ["PATH"]
 -- x.cue --
 package x
 
+x: 5
+-- x.cue.new --
+package x
+
+// A comment
 x: 5
