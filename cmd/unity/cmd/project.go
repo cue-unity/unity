@@ -320,9 +320,10 @@ func (mt *moduleTester) verifyGitStatus(dir string) (hasStaged bool, err error) 
 	lines := strings.Split(status, "\n")
 	hasUntracked := false
 	for _, l := range lines {
-		if strings.HasPrefix(l, "??") {
+		switch {
+		case strings.HasPrefix(l, "??"):
 			hasUntracked = true
-		} else {
+		case l[0] != ' ':
 			hasStaged = true
 		}
 	}
@@ -416,7 +417,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 	if _, err = gitDir(m.gitRoot, "worktree", "add", "--detach", td); err != nil {
 		return fmt.Errorf("failed to create copy of current HEAD from %s: %v", m.gitRoot, err)
 	}
-	if m.hasStaged {
+	if m.hasStaged && mt.staged {
 		// TODO make this more efficient by not reading into memory
 		var changes, stderr bytes.Buffer
 		read := exec.Command("git", "diff", "--staged")
