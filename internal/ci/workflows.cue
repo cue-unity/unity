@@ -29,6 +29,10 @@ workflows: [
 		file:   "test.yml"
 		schema: test
 	},
+	{
+		file:   "daily_check.yml"
+		schema: dailycheck
+	},
 ]
 
 test: _#bashWorkflow & {
@@ -65,14 +69,26 @@ test: _#bashWorkflow & {
 			]
 		}
 	}
+}
 
-	// _#isCLCITestBranch is an expression that evaluates to true
-	// if the job is running as a result of a CL triggered CI build
-	_#isCLCITestBranch: "startsWith(github.ref, '\(_#branchRefPrefix)ci/')"
+dailycheck: _#bashWorkflow & {
 
-	// _#isMain is an expression that evaluates to true if the
-	// job is running as a result of a main commit push
-	_#isMain: "github.ref == '\(_#branchRefPrefix+_#mainBranch)'"
+	name: "Daily check"
+	on: {
+		schedule: [{cron: "0 9 * * *"}]
+	}
+
+	jobs: {
+		test: {
+			strategy:  _#testStrategy
+			"runs-on": "${{ matrix.os }}"
+			steps: [
+				_#installGo,
+				_#checkoutCode,
+				_#runUnity,
+			]
+		}
+	}
 }
 
 _#bashWorkflow: json.#Workflow & {
@@ -181,3 +197,11 @@ _#runUnity: _#step & {
 }
 
 _#branchRefPrefix: "refs/heads/"
+
+// _#isCLCITestBranch is an expression that evaluates to true
+// if the job is running as a result of a CL triggered CI build
+_#isCLCITestBranch: "startsWith(github.ref, '\(_#branchRefPrefix)ci/')"
+
+// _#isMain is an expression that evaluates to true if the
+// job is running as a result of a main commit push
+_#isMain: "github.ref == '\(_#branchRefPrefix+_#mainBranch)'"
