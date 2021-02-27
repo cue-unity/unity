@@ -32,9 +32,9 @@ type versionResolver struct {
 }
 
 type resolver interface {
-	// resolve derives version in the context of dir
-	// (some versions are context-dependent, e.g. go.mod).
-	resolve(version, dir, working, targetDir string) error
+	// resolve derives version in the context of dir, copying the relevant
+	// binary to target. working can be used as a temporary working directory.
+	resolve(version, dir, working, target string) error
 }
 
 func newVersionResolver(c resolverConfig) (*versionResolver, error) {
@@ -70,11 +70,11 @@ func newVersionResolver(c resolverConfig) (*versionResolver, error) {
 	return res, nil
 }
 
-func (vr *versionResolver) resolve(version, dir, working, targetDir string) error {
+func (vr *versionResolver) resolve(version, dir, working, target string) error {
 	var errs []error
 	var match int
 	for _, r := range vr.resolvers {
-		err := r.resolve(version, dir, working, targetDir)
+		err := r.resolve(version, dir, working, target)
 		switch err {
 		case nil:
 			match++

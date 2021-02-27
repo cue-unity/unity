@@ -197,15 +197,37 @@ type moduleTester struct {
 	// ignoreDirty indicates we should ignore untracked files when making
 	// a copy of a module's project
 	ignoreDirty bool
+
+	// cwd is the working directory in which the module tester is being run
+	// stored for convenience
+	cwd string
+
+	// logger is a function used to log information when a module is about
+	// to be run/tested
+	logger func(m *module, v string) error
+
+	// working is the temporary directory that moduleTester uses for temporary
+	// files. Call cleanup to remove this and anything contained within it
+	working string
 }
 
-func newModuleTester(mt moduleTester) *moduleTester {
+func newModuleTester(mt moduleTester) (*moduleTester, error) {
 	sem := make(chan struct{}, runtime.NumCPU())
 	for i := 0; i < runtime.NumCPU(); i++ {
 		sem <- struct{}{}
 	}
 	mt.semaphore = sem
-	return &mt
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive working directory: %v", err)
+	}
+	td, err := ioutil.TempDir("", "unity-module-tester")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary working directory: %v", err)
+	}
+	mt.cwd = cwd
+	mt.working = td
+	return &mt, nil
 }
 
 // limit returns blocks until a concurrency slot is available
@@ -217,6 +239,16 @@ func newModuleTester(mt moduleTester) *moduleTester {
 // 		mt.semaphore <- struct{}{}
 // 	}
 // }
+
+// cleanup removes the temporary working directory of mt
+func (mt *moduleTester) cleanup() error {
+	return os.RemoveAll(mt.working)
+}
+
+// tempDir returns a temporary directory within the working temporary directory
+func (mt *moduleTester) tempDir(name string) (string, error) {
+	return ioutil.TempDir(mt.working, name)
+}
 
 // newInstance creates a module instances rooted in the CUE module that is dir.
 // A precondition of this function is that dir must be contained in gitRoot.
@@ -401,16 +433,22 @@ type module struct {
 }
 
 func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err error) {
+	if mt.logger != nil {
+		if err := mt.logger(m, version); err != nil {
+			return err
+		}
+	}
 	// TODO: we really shouldn't need to be resolving this again
-	cueDir, err := ioutil.TempDir("", "unity-run-dir")
+	working, err := mt.tempDir("run-dir")
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory for run: %v", err)
 	}
-	if err := m.tester.versionResolver.resolve(version, m.root, cueDir, cueDir); err != nil {
+	cuePath := filepath.Join(working, "cue")
+	if err := m.tester.versionResolver.resolve(version, m.root, working, cuePath); err != nil {
 		return err
 	}
 	// Create a pristine copy of the git root with no history
-	td, err := ioutil.TempDir("", "unity-git-copy")
+	td, err := mt.tempDir("git-copy")
 	if err != nil {
 		return fmt.Errorf("failed to create temp dir for pristine git copy: %v", err)
 	}
@@ -442,7 +480,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		gitRoot:       td,
 		relPath:       m.relPath,
 		testerRelPath: m.testerRelPath,
-		cuePath:       filepath.Join(cueDir, "cue"),
+		cuePath:       cuePath,
 		version:       version,
 		update:        mt.update,
 		verbose:       mt.verbose,

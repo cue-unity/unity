@@ -50,9 +50,7 @@ func newCommonCUEREsolver(c resolverConfig) (*commonCUEResolver, error) {
 	return res, nil
 }
 
-func (c *commonCUEResolver) resolve(version, targetDir string, strategy func(*commonCUEResolver) (string, error)) error {
-	target := filepath.Join(targetDir, "cue")
-
+func (c *commonCUEResolver) resolve(version, target string, strategy func(*commonCUEResolver) (string, error)) error {
 	// Check whether we have a cache hit
 	h := c.config.bh.cueVersionHash(version)
 	ce, _, err := c.config.bh.cache.GetFile(h.Sum())

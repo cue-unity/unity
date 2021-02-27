@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"os/exec"
-	"path/filepath"
 )
 
 // pathResolver resolves the CUE version "PATH" to the cue binary that is
@@ -35,7 +34,7 @@ func newPathResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (p *pathResolver) resolve(version, dir, workingDir, targetDir string) error {
+func (p *pathResolver) resolve(version, dir, workingDir, target string) error {
 	if version != "PATH" {
 		return errNoMatch
 	}
@@ -47,5 +46,5 @@ func (p *pathResolver) resolve(version, dir, workingDir, targetDir string) error
 		return fmt.Errorf("failed to find cue in PATH: %v", err)
 	}
 	// TODO: check GOOS and GOARCH for the result
-	return copyExecutableFile(exe, filepath.Join(targetDir, "cue"))
+	return copyExecutableFile(exe, target)
 }
