@@ -60,6 +60,7 @@ func (a *commonPathResolver) resolve(dir, target string) error {
 	}
 	buildTarget := filepath.Join(bin, "cue")
 	a.rootsLock.Lock()
+	defer a.rootsLock.Unlock()
 	once, ok := a.roots[root]
 	if !ok {
 		once = new(sync.Once)
