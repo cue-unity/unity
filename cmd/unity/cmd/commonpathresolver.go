@@ -42,7 +42,7 @@ func newCommonPathResolver(c resolverConfig) (*commonPathResolver, error) {
 	return res, nil
 }
 
-func (a *commonPathResolver) resolve(dir, targetDir string) error {
+func (a *commonPathResolver) resolve(dir, target string) error {
 	goenv := exec.Command("go", "env", "GOMOD")
 	goenv.Dir = dir
 	out, err := goenv.CombinedOutput()
@@ -59,7 +59,6 @@ func (a *commonPathResolver) resolve(dir, targetDir string) error {
 		return fmt.Errorf("failed to create %s: %v", bin, err)
 	}
 	buildTarget := filepath.Join(bin, "cue")
-	target := filepath.Join(targetDir, "cue")
 	a.rootsLock.Lock()
 	once, ok := a.roots[root]
 	if !ok {

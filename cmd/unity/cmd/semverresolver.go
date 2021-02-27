@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"runtime"
 	"sync"
 	"text/template"
@@ -111,7 +110,7 @@ func (sr *semverResolver) buildURL(version string, artefact string) (*url.URL, e
 	return u, nil
 }
 
-func (sr *semverResolver) resolve(version, dir, working, targetDir string) error {
+func (sr *semverResolver) resolve(version, dir, working, target string) error {
 	if !semver.IsValid(version) {
 		return errNoMatch
 	}
@@ -119,7 +118,7 @@ func (sr *semverResolver) resolve(version, dir, working, targetDir string) error
 	key := h.Sum()
 	ce, _, err := sr.config.bh.cache.GetFile(key)
 	if err == nil {
-		return copyExecutableFile(ce, filepath.Join(targetDir, "cue"))
+		return copyExecutableFile(ce, target)
 	}
 	sr.oncesLock.Lock()
 	once, ok := sr.onces[key]
@@ -139,7 +138,7 @@ func (sr *semverResolver) resolve(version, dir, working, targetDir string) error
 	if err != nil {
 		return fmt.Errorf("failed to resolve %s from cache after download", version)
 	}
-	return copyExecutableFile(ce, filepath.Join(targetDir, "cue"))
+	return copyExecutableFile(ce, target)
 }
 
 type semverURLData struct {

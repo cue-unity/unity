@@ -37,12 +37,12 @@ func newCommitResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (g *commitResolver) resolve(version, _, _, targetDir string) error {
+func (g *commitResolver) resolve(version, _, _, target string) error {
 	if !strings.HasPrefix(version, commitVersionPrefix) {
 		return errNoMatch
 	}
 	version = strings.TrimPrefix(version, commitVersionPrefix)
-	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) (string, error) {
+	return g.cc.resolve(version, target, func(c *commonCUEResolver) (string, error) {
 		if _, err := gitDir(c.dir, "checkout", version); err != nil {
 			if _, err := gitDir(c.dir, "fetch", "origin"); err != nil {
 				return "", fmt.Errorf("failed to fetch origin: %v", err)

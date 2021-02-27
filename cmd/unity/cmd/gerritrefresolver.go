@@ -33,11 +33,11 @@ func newGerritRefResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (g *gerritRefResolver) resolve(version, _, _, targetDir string) error {
+func (g *gerritRefResolver) resolve(version, _, _, target string) error {
 	if !strings.HasPrefix(version, "refs/changes/") {
 		return errNoMatch
 	}
-	return g.cc.resolve(version, targetDir, func(c *commonCUEResolver) (string, error) {
+	return g.cc.resolve(version, target, func(c *commonCUEResolver) (string, error) {
 		// fetch the version
 		if _, err := gitDir(c.dir, "fetch", cueGitSource, version); err != nil {
 			return "", fmt.Errorf("failed to fetch %s: %v", version, err)

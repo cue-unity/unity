@@ -28,9 +28,9 @@ func newGoModResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (a *goModResolver) resolve(version, dir, workingDir, targetDir string) error {
+func (a *goModResolver) resolve(version, dir, workingDir, target string) error {
 	if version != "go.mod" {
 		return errNoMatch
 	}
-	return a.cp.resolve(dir, targetDir)
+	return a.cp.resolve(dir, target)
 }

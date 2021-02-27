@@ -120,6 +120,9 @@ _#installGo: _#step & {
 _#checkoutCode: _#step & {
 	name: "Checkout code"
 	uses: "actions/checkout@v2"
+	with: {
+		submodules: true
+	}
 }
 
 _#cacheGoModules: _#step & {

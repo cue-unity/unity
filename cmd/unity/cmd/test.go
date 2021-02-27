@@ -168,7 +168,7 @@ func testDef(c *Command, args []string) error {
 		return fmt.Errorf("could not create version resolver: %v", err)
 	}
 
-	mt := newModuleTester(moduleTester{
+	mt, err := newModuleTester(moduleTester{
 		self:            self, // only used in safe mode
 		buildHelper:     bh,
 		image:           dockerImage,
@@ -183,6 +183,11 @@ func testDef(c *Command, args []string) error {
 		ignoreDirty:     flagTestIgnoreDirty.Bool(c),
 		verbose:         flagTestVerbose.Bool(c),
 	})
+	defer mt.cleanup()
+
+	if err != nil {
+		return fmt.Errorf("failed to create module tester: %v", err)
+	}
 
 	if flagTestCorpus.Bool(c) {
 		return testCorpus(c, mt, args)
