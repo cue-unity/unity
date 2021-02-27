@@ -1,3 +1,6 @@
 [submodule "projects/play-with-go"]
 	path = projects/play-with-go
 	url = https://github.com/play-with-go/play-with-go
+[submodule "projects/unity-example"]
+	path = projects/unity-example
+	url = https://github.com/cue-sh/unity-example
