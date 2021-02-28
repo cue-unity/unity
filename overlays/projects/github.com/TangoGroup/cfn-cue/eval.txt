@@ -1,0 +1,28 @@
+cue eval test0.cue
+cmp stdout $WORK/stdout.golden
+
+-- stdout.golden --
+template: {
+    Resources: {
+        S3Bucket1: {
+            Type: "AWS::S3::Bucket"
+            Properties: {
+                AccessControl: {
+                    Ref: "S3AccessControl"
+                }
+                BucketName: "the-bucket"
+            }
+        }
+        EC2Instance: {
+            Type: "AWS::EC2::Instance"
+            Properties: {
+                ImageId: {
+                    Ref: "LatestAmiId"
+                }
+                InstanceType: {
+                    Ref: "InstanceType"
+                }
+            }
+        }
+    }
+}
