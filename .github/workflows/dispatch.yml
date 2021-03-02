@@ -17,7 +17,7 @@ jobs:
     - if: ${{ github.event.client_payload.payload.cl != null }}
       name: Update Gerrit CL message with starting message
       run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Started
-        the build... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{
+        unity run... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{
         github.run_id }}"}'' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{
         github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit
         }}/review'
@@ -38,7 +38,8 @@ jobs:
           }}
         restore-keys: ${{ runner.os }}-${{ matrix.go-version }}-go-
     - name: Run unity
-      run: echo "${{ github.event.client_payload.payload.versions }}" | xargs ./_scripts/runUnity.sh"
+      run: echo "${{ toJson(github.event.client_payload.payload.versions) }}" | xargs
+        ./_scripts/runUnity.sh
     - if: ${{ github.event.client_payload.payload.cl != null && failure() }}
       name: Post any failures for this matrix entry
       run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Build

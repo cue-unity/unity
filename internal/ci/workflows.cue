@@ -131,7 +131,7 @@ dispatch: _#bashWorkflow & {
 				_#step & {
 					name: "Run unity"
 					run: """
-						echo "${{ github.event.client_payload.payload.versions }}" | xargs ./_scripts/runUnity.sh"
+						echo "${{ toJson(github.event.client_payload.payload.versions) }}" | xargs ./_scripts/runUnity.sh
 						"""
 				},
 				_#failCLBuild & {
@@ -149,7 +149,7 @@ dispatch: _#bashWorkflow & {
 	_#startCLBuild: _#step & {
 		name: "Update Gerrit CL message with starting message"
 		run:  (_#gerrit._#setCodeReview & {
-			#args: message: "Started the build... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
+			#args: message: "Started unity run... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
 		}).res
 	}
 
