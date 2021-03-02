@@ -66,7 +66,9 @@ test: _#bashWorkflow & {
 				_#goModVerify,
 				_#goGenerate,
 				_#goTest,
-				_#goTestRace,
+				_#goTestRace & {
+					if: "${{ \(_#isMain) }}"
+				},
 				_#staticcheck,
 				_#goModTidy,
 				_#checkGitClean,
@@ -184,7 +186,7 @@ dispatch: _#bashWorkflow & {
 				}
 			}
 			res: #"""
-			curl -f -s -H "Content-Type: application/json" --request POST --data '\#(encjson.Marshal(#args))' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.changeID }}/revisions/${{ github.event.client_payload.payload.commit }}/review
+			curl -f -s -H "Content-Type: application/json" --request POST --data '\#(encjson.Marshal(#args))' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
 			"""#
 		}
 	}

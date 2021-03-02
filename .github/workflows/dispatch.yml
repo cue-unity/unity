@@ -19,7 +19,7 @@ jobs:
       run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Started
         the build... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{
         github.run_id }}"}'' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{
-        github.event.client_payload.payload.changeID }}/revisions/${{ github.event.client_payload.payload.commit
+        github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit
         }}/review'
     - name: Install Go
       uses: actions/setup-go@v2
@@ -44,14 +44,14 @@ jobs:
       run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Build
         failed for ${{ runner.os }}-${{ matrix.go-version }}; see ${{ github.event.repository.html_url
         }}/actions/runs/${{ github.run_id }} for more details","labels":{"Code-Review":-1}}''
-        -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.changeID
-        }}/revisions/${{ github.event.client_payload.payload.commit }}/review'
+        -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID
+        }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review'
     - if: ${{ github.event.client_payload.payload.cl != null && success() }}
       name: Update Gerrit CL message with success message
       run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Build
         succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id
         }}","labels":{"Code-Review":1}}'' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{
-        github.event.client_payload.payload.changeID }}/revisions/${{ github.event.client_payload.payload.commit
+        github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit
         }}/review'
     strategy:
       fail-fast: false
