@@ -16,6 +16,7 @@ package ci
 
 import (
 	"github.com/SchemaStore/schemastore/src/schemas/json"
+	encjson "encoding/json"
 )
 
 workflowsDir: *"./" | string @tag(workflowsDir)
@@ -32,6 +33,10 @@ workflows: [
 	{
 		file:   "daily_check.yml"
 		schema: dailycheck
+	},
+	{
+		file:   "dispatch.yml"
+		schema: dispatch
 	},
 ]
 
@@ -91,6 +96,100 @@ dailycheck: _#bashWorkflow & {
 	}
 }
 
+dispatch: _#bashWorkflow & {
+	// These constants are defined by github.com/cue-sh/tools/cmd/cueckoo
+	_#runtrybot: "runtrybot"
+	_#mirror:    "mirror"
+	_#importpr:  "importpr"
+	_#unity:     "unity"
+
+	_#dispatchJob: _#job & {
+		_#type: string
+		if:     "${{ github.event.client_payload.type == '\(_#type)' }}"
+	}
+
+	name: "Repository Dispatch"
+	on: ["repository_dispatch"]
+
+	jobs: {
+		test: _#dispatchJob & {
+			_#type:    _#unity
+			strategy:  _#testStrategy
+			"runs-on": "${{ matrix.os }}"
+			steps: [
+				_#writeCookiesFile & {
+					if: "${{ \(_#ifIsCLVersion) }}"
+				},
+				_#startCLBuild & {
+					if: "${{ \(_#ifIsCLVersion) }}"
+				},
+				_#installGo,
+				_#checkoutCode,
+				_#cacheGoModules,
+				_#step & {
+					name: "Run unity"
+					run: """
+						echo "${{ github.event.client_payload.payload.versions }}" | xargs ./_scripts/runUnity.sh"
+						"""
+				},
+				_#failCLBuild & {
+					if: "${{ \(_#ifIsCLVersion) && failure() }}"
+				},
+				_#passCLBuild & {
+					if: "${{ \(_#ifIsCLVersion) && success() }}"
+				},
+			]
+		}
+	}
+
+	_#ifIsCLVersion: "github.event.client_payload.payload.cl != null"
+
+	_#startCLBuild: _#step & {
+		name: "Update Gerrit CL message with starting message"
+		run:  (_#gerrit._#setCodeReview & {
+			#args: message: "Started the build... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
+		}).res
+	}
+
+	_#failCLBuild: _#step & {
+		name: "Post any failures for this matrix entry"
+		run:  (_#gerrit._#setCodeReview & {
+			#args: {
+				message: "Build failed for ${{ runner.os }}-${{ matrix.go-version }}; see ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }} for more details"
+				labels: {
+					"Code-Review": -1
+				}
+			}
+		}).res
+	}
+
+	_#passCLBuild: _#step & {
+		name: "Update Gerrit CL message with success message"
+		run:  (_#gerrit._#setCodeReview & {
+			#args: {
+				message: "Build succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
+				labels: {
+					"Code-Review": 1
+				}
+			}
+		}).res
+	}
+
+	_#gerrit: {
+		_#setCodeReview: {
+			#args: {
+				message: string
+				labels?: {
+					"Code-Review": int
+				}
+			}
+			res: #"""
+			curl -f -s -H "Content-Type: application/json" --request POST --data '\#(encjson.Marshal(#args))' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.changeID }}/revisions/${{ github.event.client_payload.payload.commit }}/review
+			"""#
+		}
+	}
+}
+
 _#bashWorkflow: json.#Workflow & {
 	jobs: [string]: defaults: run: shell: "bash"
 }
@@ -107,6 +206,11 @@ _#codeGenGo:      _#latestStableGo
 _#linuxMachine:   "ubuntu-18.04"
 _#macosMachine:   "macos-10.15"
 _#windowsMachine: "windows-2019"
+
+_#writeCookiesFile: _#step & {
+	name: "Write the gitcookies file"
+	run:  "echo \"${{ secrets.gerritCookie }}\" > ~/.gitcookies"
+}
 
 _#testStrategy: {
 	"fail-fast": false
