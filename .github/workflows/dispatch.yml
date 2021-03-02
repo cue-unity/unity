@@ -38,7 +38,7 @@ jobs:
           }}
         restore-keys: ${{ runner.os }}-${{ matrix.go-version }}-go-
     - name: Run unity
-      run: echo "${{ toJson(github.event.client_payload.payload.versions) }}" | xargs
+      run: echo ${{ toJson(github.event.client_payload.payload.versions) }} | xargs
         ./_scripts/runUnity.sh
     - if: ${{ github.event.client_payload.payload.cl != null && failure() }}
       name: Post any failures for this matrix entry
