@@ -131,7 +131,7 @@ dispatch: _#bashWorkflow & {
 				_#step & {
 					name: "Run unity"
 					run: """
-						echo "${{ toJson(github.event.client_payload.payload.versions) }}" | xargs ./_scripts/runUnity.sh
+						echo ${{ toJson(github.event.client_payload.payload.versions) }} | xargs ./_scripts/runUnity.sh
 						"""
 				},
 				_#failCLBuild & {
