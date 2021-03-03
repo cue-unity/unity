@@ -32,7 +32,6 @@ import (
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
 	"github.com/cue-sh/unity"
-	"github.com/cue-sh/unity/internal/copy"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"
 )
@@ -331,6 +330,7 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 		testerRelPath: testerGitRel,
 		relPath:       gitRel,
 		manifestDir:   manifestDir,
+		scripts:       scripts,
 		manifest:      manifest,
 		hasStaged:     hasStaged,
 	}
@@ -420,6 +420,10 @@ type module struct {
 	// directory within a CUE module
 	manifestDir string
 
+	// scripts is the list of .txt files that will be run
+	// as testscript tests for this module
+	scripts []string
+
 	// manifest is the decoded manifest for the module
 	manifest unity.Manifest
 
@@ -448,36 +452,44 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		return err
 	}
 	// Create a pristine copy of the git root with no history
-	td, err := mt.tempDir("git-copy")
+	td, err := mt.tempDir("workdir")
 	if err != nil {
-		return fmt.Errorf("failed to create temp dir for pristine git copy: %v", err)
+		return fmt.Errorf("failed to create workdir root: %v", err)
 	}
-	if _, err = gitDir(m.gitRoot, "worktree", "add", "--detach", td); err != nil {
-		return fmt.Errorf("failed to create copy of current HEAD from %s: %v", m.gitRoot, err)
-	}
-	if m.hasStaged && mt.staged {
-		// TODO make this more efficient by not reading into memory
-		var changes, stderr bytes.Buffer
-		read := exec.Command("git", "diff", "--staged")
-		read.Dir = m.gitRoot
-		read.Stdout = &changes
-		read.Stderr = &stderr
-		if err := read.Run(); err != nil {
-			return fmt.Errorf("failed to read staged changes in %s via [%v]: %v\n%s", m.gitRoot, read, err, stderr.Bytes())
+	for _, s := range m.scripts {
+		// uses the pattern of directory construction from testscript
+		name := strings.TrimSuffix(filepath.Base(s), ".txt")
+		dir := filepath.Join(td, "script-"+name, repoDir)
+		if err := os.MkdirAll(dir, 0777); err != nil {
+			return fmt.Errorf("failed to create workdir for %s: %v", s, err)
 		}
-		write := exec.Command("git", "apply")
-		write.Dir = td
-		write.Stdin = &changes
-		if out, err := write.CombinedOutput(); err != nil {
-			return fmt.Errorf("failed to apply staged changes in %s via [%v]: %v\n%s", td, write, err, out)
+		if _, err = gitDir(m.gitRoot, "worktree", "add", "--detach", dir); err != nil {
+			return fmt.Errorf("failed to create copy of current HEAD from %s: %v", m.gitRoot, err)
+		}
+		defer gitDir(m.gitRoot, "worktree", "remove", dir)
+		if m.hasStaged && mt.staged {
+			// TODO make this more efficient by not reading into memory
+			var changes, stderr bytes.Buffer
+			read := exec.Command("git", "diff", "--staged")
+			read.Dir = m.gitRoot
+			read.Stdout = &changes
+			read.Stderr = &stderr
+			if err := read.Run(); err != nil {
+				return fmt.Errorf("failed to read staged changes in %s via [%v]: %v\n%s", m.gitRoot, read, err, stderr.Bytes())
+			}
+			write := exec.Command("git", "apply")
+			write.Dir = dir
+			write.Stdin = &changes
+			if out, err := write.CombinedOutput(); err != nil {
+				return fmt.Errorf("failed to apply staged changes in %s via [%v]: %v\n%s", td, write, err, out)
+			}
 		}
 	}
-	defer gitDir(m.gitRoot, "worktree", "remove", td)
 
 	rmi := runModuleInfo{
 		self:          mt.self,
 		manifestDir:   m.manifestDir,
-		gitRoot:       td,
+		workdirRoot:   td,
 		relPath:       m.relPath,
 		testerRelPath: m.testerRelPath,
 		cuePath:       cuePath,
@@ -495,7 +507,7 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 type runModuleInfo struct {
 	self          string
 	manifestDir   string
-	gitRoot       string
+	workdirRoot   string
 	relPath       string
 	testerRelPath string
 	cuePath       string
@@ -508,20 +520,10 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 	params := testscript.Params{
 		UpdateScripts: info.update,
 		Dir:           info.manifestDir,
+		WorkdirRoot:   info.workdirRoot,
 		Setup: func(e *testscript.Env) error {
 			// Limit concurrency across all testscript runs
 			// e.Defer(m.tester.limit())
-
-			// Make a copy of the current state of the git repo into
-			// into the repo subdirectory of the workdir
-			repoCopy := filepath.Join(e.WorkDir, repoDir)
-			if err := os.Mkdir(repoCopy, 0777); err != nil {
-				return err
-			}
-			if err := copy.Dir(info.gitRoot, repoCopy); err != nil {
-				return err
-			}
-			// The removal of the workdir will clean up the copy
 
 			// Set the working directory to be module
 			e.Cd = filepath.Join(e.WorkDir, repoDir, info.relPath)
@@ -587,7 +589,7 @@ func dockerRunModule(image string, log io.Writer, info runModuleInfo) (err error
 
 		// Add mounts
 		"-v", info.manifestDir + ":/unity/manifestDir",
-		"-v", info.gitRoot + ":/unity/gitRoot",
+		"-v", info.workdirRoot + ":/unity/workdirRoot",
 		"-v", info.cuePath + ":/unity/cue",
 		"-v", info.self + ":/unity/unity",
 
@@ -595,7 +597,7 @@ func dockerRunModule(image string, log io.Writer, info runModuleInfo) (err error
 
 		"/unity/unity", "docker",
 		"--manifest", "/unity/manifestDir",
-		"--gitRoot", "/unity/gitRoot",
+		"--workdirRoot", "/unity/workdirRoot",
 		"--relPath", info.relPath,
 		"--testerRelPath", info.testerRelPath,
 		"--cuePath", "/unity/cue",
