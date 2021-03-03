@@ -23,7 +23,7 @@ import (
 const (
 	flagDockerSelf          flagName = "self"
 	flagDockerManifest      flagName = "manifest"
-	flagDockerGitRoot       flagName = "gitRoot"
+	flagDockerWorkdirRoot   flagName = "workdirRoot"
 	flagDockerRelPath       flagName = "relPath"
 	flagDockerTesterRelPath flagName = "testerRelPath"
 	flagDockerCUEPath       flagName = "cuePath"
@@ -43,7 +43,7 @@ func newDockerCmd(c *Command) *cobra.Command {
 	}
 	cmd.Flags().String(string(flagDockerSelf), "", "the path to self")
 	cmd.Flags().String(string(flagDockerManifest), "", "the path to the manifest directory for the project")
-	cmd.Flags().String(string(flagDockerGitRoot), "", "the git root of the project under test")
+	cmd.Flags().String(string(flagDockerWorkdirRoot), "", "the workdir root for the project under test")
 	cmd.Flags().String(string(flagDockerRelPath), "", "the relative path to the project git root")
 	cmd.Flags().String(string(flagDockerTesterRelPath), "", "the relative path the module tester git root")
 	cmd.Flags().String(string(flagDockerCUEPath), "", "the path to the CUE binary to use")
@@ -58,7 +58,7 @@ func dockerDef(c *Command, args []string) error {
 		runModuleInfo{
 			self:          flagDockerSelf.String(c),
 			manifestDir:   flagDockerManifest.String(c),
-			gitRoot:       flagDockerGitRoot.String(c),
+			workdirRoot:   flagDockerWorkdirRoot.String(c),
 			relPath:       flagDockerRelPath.String(c),
 			testerRelPath: flagDockerTesterRelPath.String(c),
 			cuePath:       flagDockerCUEPath.String(c),
