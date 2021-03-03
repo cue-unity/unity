@@ -4,3 +4,6 @@
 [submodule "projects/github.com/cue-sh/unity-example"]
 	path = projects/github.com/cue-sh/unity-example
 	url = https://github.com/cue-sh/unity-example
+[submodule "projects/github.com/timberio/vector"]
+	path = projects/github.com/timberio/vector
+	url = https://github.com/timberio/vector
