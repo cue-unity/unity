@@ -34,17 +34,19 @@ func newPathResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (p *pathResolver) resolve(version, dir, workingDir, target string) error {
+func (p *pathResolver) resolve(version, dir, workingDir, target string) (string, error) {
 	if version != "PATH" {
-		return errNoMatch
+		return "", errNoMatch
 	}
 	if !p.config.allowPATH {
-		return errPATHNotAllowed
+		return "", errPATHNotAllowed
 	}
 	exe, err := exec.LookPath("cue")
 	if err != nil {
-		return fmt.Errorf("failed to find cue in PATH: %v", err)
+		return "", fmt.Errorf("failed to find cue in PATH: %v", err)
 	}
 	// TODO: check GOOS and GOARCH for the result
-	return copyExecutableFile(exe, target)
+	// TODO: extract more useful version information from the cue binary
+	// in PATH
+	return "PATH", copyExecutableFile(exe, target)
 }

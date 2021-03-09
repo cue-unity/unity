@@ -485,16 +485,17 @@ type module struct {
 func (mt *moduleTester) run(tr *testResult) (err error) {
 	m := tr.module
 	version := tr.version
-	fmt.Fprintf(os.Stderr, "testing %s against version %s\n", tr.module.path, version)
 	// TODO: we really shouldn't need to be resolving this again
 	working, err := mt.tempDir("run-dir")
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory for run: %v", err)
 	}
 	cuePath := filepath.Join(working, "cue")
-	if err := m.tester.versionResolver.resolve(version, m.root, working, cuePath); err != nil {
+	tr.resolvedVersion, err = m.tester.versionResolver.resolve(version, m.root, working, cuePath)
+	if err != nil {
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "testing %s against version %s\n", tr.module.path, tr.resolvedVersion)
 	// Create a pristine copy of the git root with no history
 	td, err := mt.tempDir("workdir")
 	if err != nil {

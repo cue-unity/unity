@@ -8,8 +8,9 @@ git add -A
 git commit -m 'Initial commit'
 
 # Test - corresponds to the version that is v0.3.0-beta.5
-unity test commit:bcd752ada5ab3e5814f7b95e5f82af61b5f4cf3e
+unity test commit:bcd752ad
 ! stdout .+
+stderr 'ok.*mod\.com.*bcd752ada5ab3e5814f7b95e5f82af61b5f4cf3e'
 
 -- .unquote --
 cue.mod/tests/basic.txt

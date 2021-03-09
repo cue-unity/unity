@@ -14,6 +14,8 @@
 
 package cmd
 
+import "fmt"
+
 // goModResolver resolves a CUE version of "go.mod" and uses the Go module
 // context within which the CUE module is found to resolve a CUE version. cue
 // is then built within a .unity-bin directory at the Go module root
@@ -28,9 +30,13 @@ func newGoModResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (a *goModResolver) resolve(version, dir, workingDir, target string) error {
+func (a *goModResolver) resolve(version, dir, workingDir, target string) (string, error) {
 	if version != "go.mod" {
-		return errNoMatch
+		return "", errNoMatch
 	}
-	return a.cp.resolve(dir, target)
+	commit, err := a.cp.resolve(dir, target)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s (%s)", version, commit), nil
 }

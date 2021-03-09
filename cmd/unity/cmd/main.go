@@ -24,6 +24,13 @@ import (
 )
 
 const (
+	// cueModule is the path used to identify the module that contains
+	// cmd/cue
+	cueModule = "cuelang.org/go"
+
+	// cmdCue is the import path to cmd/cue
+	cmdCue = cueModule + "/cmd/cue"
+
 	// moduleSelf is used to identify build info for the running unity
 	// process
 	moduleSelf = "github.com/cue-sh/unity"

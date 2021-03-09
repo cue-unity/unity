@@ -39,9 +39,9 @@ func newAbsolutePathResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (a *absolutePathResolver) resolve(version, dir, workingDir, target string) error {
+func (a *absolutePathResolver) resolve(version, dir, workingDir, target string) (string, error) {
 	if !filepath.IsAbs(version) {
-		return errNoMatch
+		return "", errNoMatch
 	}
 	return a.cp.resolve(version, target)
 }

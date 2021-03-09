@@ -37,9 +37,9 @@ func newCommitResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (g *commitResolver) resolve(version, _, _, target string) error {
+func (g *commitResolver) resolve(version, _, _, target string) (string, error) {
 	if !strings.HasPrefix(version, commitVersionPrefix) {
-		return errNoMatch
+		return "", errNoMatch
 	}
 	version = strings.TrimPrefix(version, commitVersionPrefix)
 	return g.cc.resolve(version, target, func(c *commonCUEResolver) (string, error) {
@@ -55,6 +55,7 @@ func (g *commitResolver) resolve(version, _, _, target string) error {
 		if err != nil {
 			return "", fmt.Errorf("failed to rev-parse HEAD: %v", err)
 		}
+		version = strings.TrimSpace(version)
 		return version, nil
 	})
 }

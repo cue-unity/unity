@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -42,21 +43,31 @@ func newCommonPathResolver(c resolverConfig) (*commonPathResolver, error) {
 	return res, nil
 }
 
-func (a *commonPathResolver) resolve(dir, target string) error {
-	goenv := exec.Command("go", "env", "GOMOD")
-	goenv.Dir = dir
-	out, err := goenv.CombinedOutput()
+// resolve attempts to resolve cuelang.org/go as a Go dependency within
+// dir. If cuelang.org/go is the main module, then the version returned
+// is the commit found in that directory. Otherwise, the version of
+// cuelang.org/go the dependency is returned.
+func (a *commonPathResolver) resolve(dir, target string) (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-json")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to determine module root via [%v] in %s: %v\n%s", goenv, dir, err, out)
+		return "", fmt.Errorf("failed to determine module information via [%v] in %s: %v\n%s", cmd, dir, err, out)
 	}
-	gomod := strings.TrimSpace(string(out))
-	if gomod == "" || gomod == os.DevNull {
-		return fmt.Errorf("failed to resolve module root within %s: resolve %q", dir, gomod)
+	var gomod struct {
+		Dir  string
+		Path string
 	}
-	root := filepath.Dir(gomod)
+	if err := json.Unmarshal(out, &gomod); err != nil {
+		return "", fmt.Errorf("failed to parse module information: %v\n%s", err, out)
+	}
+	if gomod.Dir == "" {
+		return "", fmt.Errorf("failed to resolve module root within %s: resolve %+v", dir, gomod)
+	}
+	root := gomod.Dir
 	bin := filepath.Join(root, commonPathBin)
 	if err := os.MkdirAll(bin, 0777); err != nil {
-		return fmt.Errorf("failed to create %s: %v", bin, err)
+		return "", fmt.Errorf("failed to create %s: %v", bin, err)
 	}
 	buildTarget := filepath.Join(bin, "cue")
 	a.rootsLock.Lock()
@@ -66,18 +77,34 @@ func (a *commonPathResolver) resolve(dir, target string) error {
 		once = new(sync.Once)
 		a.roots[root] = once
 	}
+	var version string
+	if gomod.Path == cueModule {
+		commit, err := gitDir(dir, "rev-parse", "HEAD")
+		if err != nil {
+			return "", fmt.Errorf("failed to rev-parse HEAD: %v", err)
+		}
+		version = strings.TrimSpace(commit)
+	} else {
+		cmd := exec.Command("go", "list", "-m", "-f", "{{.Version}}", cueModule)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve version for module %s in %s: %v", cueModule, dir, err)
+		}
+		version = strings.TrimSpace(string(out))
+	}
 	var onceerr error
 	once.Do(func() {
 		onceerr = a.buildDir(dir, buildTarget)
 	})
 	if onceerr != nil {
-		return fmt.Errorf("failed to build CUE in %s: %v", root, onceerr)
+		return "", fmt.Errorf("failed to build CUE in %s: %v", root, onceerr)
 	}
-	return copyExecutableFile(buildTarget, target)
+	return version, copyExecutableFile(buildTarget, target)
 }
 
 func (a *commonPathResolver) buildDir(dir, target string) error {
-	cmd := exec.Command("go", "build", "-o", target, "cuelang.org/go/cmd/cue")
+	cmd := exec.Command("go", "build", "-o", target, cmdCue)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), a.config.bh.buildEnv()...)
 	if out, err := cmd.CombinedOutput(); err != nil {
