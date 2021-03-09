@@ -33,9 +33,9 @@ func newGerritRefResolver(c resolverConfig) (resolver, error) {
 	return res, nil
 }
 
-func (g *gerritRefResolver) resolve(version, _, _, target string) error {
+func (g *gerritRefResolver) resolve(version, _, _, target string) (string, error) {
 	if !strings.HasPrefix(version, "refs/changes/") {
-		return errNoMatch
+		return "", errNoMatch
 	}
 	return g.cc.resolve(version, target, func(c *commonCUEResolver) (string, error) {
 		// fetch the version

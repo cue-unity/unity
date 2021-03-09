@@ -60,7 +60,7 @@ func TestScripts(t *testing.T) {
 	cueTarget := filepath.Join(selfDir, "cue")
 	// install the required version of CUE to ensure that CUE versions of PATH
 	// specified in unity tests run consistently for the target docker image
-	if err := bh.buildAndCache(cwd, cueTarget, "cuelang.org/go/cmd/cue"); err != nil {
+	if err := bh.buildAndCache(cwd, cueTarget, cmdCue); err != nil {
 		t.Fatal(err)
 	}
 

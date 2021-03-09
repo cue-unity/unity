@@ -34,7 +34,7 @@ type versionResolver struct {
 type resolver interface {
 	// resolve derives version in the context of dir, copying the relevant
 	// binary to target. working can be used as a temporary working directory.
-	resolve(version, dir, working, target string) error
+	resolve(version, dir, working, target string) (string, error)
 }
 
 func newVersionResolver(c resolverConfig) (*versionResolver, error) {
@@ -70,14 +70,14 @@ func newVersionResolver(c resolverConfig) (*versionResolver, error) {
 	return res, nil
 }
 
-func (vr *versionResolver) resolve(version, dir, working, target string) error {
+func (vr *versionResolver) resolve(version, dir, working, target string) (string, error) {
 	var errs []error
-	var match int
+	var versions []string
 	for _, r := range vr.resolvers {
-		err := r.resolve(version, dir, working, target)
+		v, err := r.resolve(version, dir, working, target)
 		switch err {
 		case nil:
-			match++
+			versions = append(versions, v)
 		case errNoMatch:
 		default:
 			errs = append(errs, err)
@@ -90,12 +90,12 @@ func (vr *versionResolver) resolve(version, dir, working, target string) error {
 			fmt.Fprintf(&buf, "%v%v", join, e)
 			join = "\n"
 		}
-		return fmt.Errorf("got errors during version resolution:\n%s", buf.Bytes())
+		return "", fmt.Errorf("got errors during version resolution:\n%s", buf.Bytes())
 	}
-	if match != 1 {
-		return fmt.Errorf("expected 1 match; got %v", match)
+	if l := len(versions); l != 1 {
+		return "", fmt.Errorf("expected 1 match; got %v", l)
 	}
-	return nil
+	return versions[0], nil
 }
 
 type resolverConfig struct {

@@ -13,6 +13,7 @@ git commit -m 'Initial commit'
 # Test
 unity test $WORK/_cue
 ! stdout .+
+stderr 'ok.*mod\.com.*bcd752ada5ab3e5814f7b95e5f82af61b5f4cf3e'
 
 -- .unquote --
 cue.mod/tests/basic.txt

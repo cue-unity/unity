@@ -50,31 +50,33 @@ func newCommonCUEREsolver(c resolverConfig) (*commonCUEResolver, error) {
 	return res, nil
 }
 
-func (c *commonCUEResolver) resolve(version, target string, strategy func(*commonCUEResolver) (string, error)) error {
+func (c *commonCUEResolver) resolve(version, target string, strategy func(*commonCUEResolver) (string, error)) (string, error) {
 	// Check whether we have a cache hit
 	h := c.config.bh.cueVersionHash(version)
 	ce, _, err := c.config.bh.cache.GetFile(h.Sum())
 	if err == nil {
-		return copyExecutableFile(ce, target)
+		// In this case the canonical version was specified so we can
+		// return that directly
+		return version, copyExecutableFile(ce, target)
 	}
 
 	// We need to build
 	unlock, err := c.lock.Lock()
 	if err != nil {
-		return fmt.Errorf("failed to acquire lockfile: %v", err)
+		return "", fmt.Errorf("failed to acquire lockfile: %v", err)
 	}
 	defer unlock()
 
 	// Ensure we have a clone in the first place
 	if _, err := os.Stat(filepath.Join(c.dir, ".git")); err != nil {
 		if _, err := gitDir(c.dir, "clone", cueGitSource, "."); err != nil {
-			return fmt.Errorf("failed to clone CUE: %v", err)
+			return "", fmt.Errorf("failed to clone CUE: %v", err)
 		}
 	}
 
 	version, err = strategy(c)
 	if err != nil {
-		return err
+		return "", err
 	}
 	h = c.config.bh.cueVersionHash(version)
 
@@ -85,18 +87,18 @@ func (c *commonCUEResolver) resolve(version, target string, strategy func(*commo
 	cmd.Env = append(os.Environ(), c.config.bh.buildEnv()...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to run [%v] in %s: %v\n%s", cmd, buildDir, err, out)
+		return "", fmt.Errorf("failed to run [%v] in %s: %v\n%s", cmd, buildDir, err, out)
 	}
 	buildTarget := filepath.Join(buildDir, "cue")
 
 	targetFile, err := os.Open(buildTarget)
 	if err != nil {
-		return fmt.Errorf("failed to open build result %s: %v", buildTarget, err)
+		return "", fmt.Errorf("failed to open build result %s: %v", buildTarget, err)
 	}
 	defer targetFile.Close()
 	if _, _, err := c.config.bh.cache.Put(h.Sum(), targetFile); err != nil {
-		return fmt.Errorf("failed to write cue to the cache: %v", err)
+		return "", fmt.Errorf("failed to write cue to the cache: %v", err)
 	}
 
-	return copyExecutableFile(buildTarget, target)
+	return version, copyExecutableFile(buildTarget, target)
 }

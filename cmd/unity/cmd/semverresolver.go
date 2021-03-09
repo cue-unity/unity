@@ -110,15 +110,16 @@ func (sr *semverResolver) buildURL(version string, artefact string) (*url.URL, e
 	return u, nil
 }
 
-func (sr *semverResolver) resolve(version, dir, working, target string) error {
+func (sr *semverResolver) resolve(version, dir, working, target string) (string, error) {
 	if !semver.IsValid(version) {
-		return errNoMatch
+		return "", errNoMatch
 	}
 	h := sr.config.bh.cueVersionHash(version)
 	key := h.Sum()
 	ce, _, err := sr.config.bh.cache.GetFile(key)
 	if err == nil {
-		return copyExecutableFile(ce, target)
+		// In this case we used a genuine known semver version
+		return version, copyExecutableFile(ce, target)
 	}
 	sr.oncesLock.Lock()
 	once, ok := sr.onces[key]
@@ -132,13 +133,13 @@ func (sr *semverResolver) resolve(version, dir, working, target string) error {
 		onceerr = sr.resolveSemverImpl(key, version)
 	})
 	if onceerr != nil {
-		return fmt.Errorf("failed to download %s: %v", version, onceerr)
+		return "", fmt.Errorf("failed to download %s: %v", version, onceerr)
 	}
 	ce, _, err = sr.config.bh.cache.GetFile(key)
 	if err != nil {
-		return fmt.Errorf("failed to resolve %s from cache after download", version)
+		return "", fmt.Errorf("failed to resolve %s from cache after download", version)
 	}
-	return copyExecutableFile(ce, target)
+	return version, copyExecutableFile(ce, target)
 }
 
 type semverURLData struct {
