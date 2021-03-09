@@ -130,8 +130,16 @@ dispatch: _#bashWorkflow & {
 				_#cacheGoModules,
 				_#step & {
 					name: "Run unity"
+					id:   "unity_run"
 					run: """
-						echo ${{ toJson(github.event.client_payload.payload.versions) }} | xargs ./_scripts/runUnity.sh
+						set -o pipefail
+						output=$(mktemp)
+						echo ${{ toJson(github.event.client_payload.payload.versions) }} | xargs ./_scripts/runUnity.sh 2>&1 | tee $output
+						content="$(cat $output)"
+						content="${content//'%'/'%25'}"
+						content="${content//$'\n'/'%0A'}"
+						content="${content//$'\r'/'%0D'}"
+						echo "::set-output name=output::${content}"
 						"""
 				},
 				_#failCLBuild & {
@@ -149,7 +157,12 @@ dispatch: _#bashWorkflow & {
 	_#startCLBuild: _#step & {
 		name: "Update Gerrit CL message with starting message"
 		run:  (_#gerrit._#setCodeReview & {
-			#args: message: "Started unity run... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
+			#args: {
+				message: "Started unity run... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
+				labels: {
+					"Code-Review": 0
+				}
+			}
 		}).res
 	}
 
@@ -169,7 +182,11 @@ dispatch: _#bashWorkflow & {
 		name: "Update Gerrit CL message with success message"
 		run:  (_#gerrit._#setCodeReview & {
 			#args: {
-				message: "Build succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}"
+				message: """
+					Build succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
+
+					${{ steps.unity_run.outputs.output }}
+					"""
 				labels: {
 					"Code-Review": 1
 				}
@@ -180,8 +197,9 @@ dispatch: _#bashWorkflow & {
 	_#gerrit: {
 		_#setCodeReview: {
 			#args: {
+				tag:     "unity"
 				message: string
-				labels?: {
+				labels: {
 					"Code-Review": int
 				}
 			}
