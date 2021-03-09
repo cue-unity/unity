@@ -147,7 +147,7 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 		v, p := float64(tr.duration), float64(prev.duration)
 		var diff, prevVersion string
 		if prev != tr {
-			diff = fmt.Sprintf("%+.3f%%", (v-p)/p)
+			diff = fmt.Sprintf("%+.3f%%", (v-p)/p*100)
 			prevVersion = prev.resolvedVersion
 		}
 		tw.Append([]string{status, tr.module.path, tr.resolvedVersion, fmt.Sprintf("%.3fs", tr.duration.Seconds()), diff, prevVersion})
