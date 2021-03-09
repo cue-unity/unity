@@ -22,14 +22,6 @@ import (
 )
 
 func testCorpus(cmd *Command, mt *moduleTester, versions []string) error {
-	mt.logger = func(m *module, version string) error {
-		rel, err := filepath.Rel(mt.cwd, m.root)
-		if err != nil {
-			return fmt.Errorf("failed to determine %s relative to %s: %v", m.root, mt.cwd, err)
-		}
-		fmt.Fprintf(os.Stderr, "testing %s against version %s\n", rel, version)
-		return nil
-	}
 	submodConfig := filepath.Join(mt.gitRoot, ".gitmodules")
 	if _, err := os.Stat(submodConfig); err != nil {
 		return fmt.Errorf("failed to find git submodules config file at %s: %v", submodConfig, err)

@@ -27,11 +27,13 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
 	"github.com/cue-sh/unity"
+	"github.com/olekukonko/tablewriter"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"
 )
@@ -69,12 +71,10 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	// }
 	done := make(map[*module]map[string]bool)
 
+	firstResult := make(map[*module]*testResult)
+
 	// At this stage, we know that toTest is a list of
 	// valid and fully resolved versions to test
-	type testResult struct {
-		log *bytes.Buffer
-		err error
-	}
 	var tested []*testResult
 	verify := func(whatToTest func(*module) []string) {
 		// var wg sync.WaitGroup
@@ -93,18 +93,38 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 				}
 				mdone[v] = true
 				res := &testResult{
-					log: new(bytes.Buffer),
+					log:     new(bytes.Buffer),
+					module:  m,
+					version: v,
+				}
+				if _, ok := firstResult[m]; !ok {
+					firstResult[m] = res
 				}
 				tested = append(tested, res)
 				// wg.Add(1)
 				// go func() {
 				// 	defer wg.Done()
-				res.err = mt.run(m, res.log, v)
+				res.err = mt.run(res)
 				// }()
 			}
 		}
 		// wg.Wait()
 	}
+
+	// Write results to a table
+	tw := tablewriter.NewWriter(os.Stderr)
+	tw.SetAutoWrapText(false)
+	tw.SetAutoFormatHeaders(true)
+	tw.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	tw.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_LEFT, tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_LEFT})
+	tw.SetCenterSeparator("")
+	tw.SetColumnSeparator("")
+	tw.SetRowSeparator("")
+	tw.SetHeaderLine(false)
+	tw.SetBorder(false)
+	tw.SetTablePadding("  ")
+	tw.SetNoWhiteSpace(true)
+
 	// First check the base versions
 	verify(func(m *module) []string { return m.manifest.Versions })
 	sawError := false
@@ -116,6 +136,21 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	// Only run the additional versions if we passed the base version
 	if !sawError && len(versions) > 0 {
 		verify(func(*module) []string { return versions })
+	}
+
+	logTime := func(tr *testResult) {
+		status := "ok"
+		if tr.err != nil {
+			status = "FAIL"
+		}
+		prev := firstResult[tr.module]
+		v, p := float64(tr.duration), float64(prev.duration)
+		var diff, prevVersion string
+		if prev != tr {
+			diff = fmt.Sprintf("%+.3f%%", (v-p)/p)
+			prevVersion = prev.resolvedVersion
+		}
+		tw.Append([]string{status, tr.module.path, tr.resolvedVersion, fmt.Sprintf("%.3fs", tr.duration.Seconds()), diff, prevVersion})
 	}
 
 	// Subjective error printing. Log errors that are non errTestFail
@@ -137,11 +172,22 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 		if hasErr || mt.verbose {
 			fmt.Fprint(out, tr.log.String())
 		}
+		logTime(tr)
 	}
+	tw.Render()
 	if sawError {
 		return errTestFail
 	}
 	return nil
+}
+
+type testResult struct {
+	module          *module
+	version         string
+	resolvedVersion string
+	log             *bytes.Buffer
+	err             error
+	duration        time.Duration
 }
 
 type moduleTester struct {
@@ -200,10 +246,6 @@ type moduleTester struct {
 	// cwd is the working directory in which the module tester is being run
 	// stored for convenience
 	cwd string
-
-	// logger is a function used to log information when a module is about
-	// to be run/tested
-	logger func(m *module, v string) error
 
 	// working is the temporary directory that moduleTester uses for temporary
 	// files. Call cleanup to remove this and anything contained within it
@@ -324,6 +366,7 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	}
 
 	res := &module{
+		path:          mod.Module,
 		tester:        mt,
 		gitRoot:       gitRoot,
 		root:          mod.Root,
@@ -400,6 +443,9 @@ func (mt *moduleTester) deriveModules(dir string) (modules []*module, err error)
 
 // module represents a CUE module under test
 type module struct {
+	// path is the module path
+	path string
+
 	// root is the absolute path to the module root
 	// The CUE module will be contained within gitroot
 	root string
@@ -436,12 +482,10 @@ type module struct {
 	hasStaged bool
 }
 
-func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err error) {
-	if mt.logger != nil {
-		if err := mt.logger(m, version); err != nil {
-			return err
-		}
-	}
+func (mt *moduleTester) run(tr *testResult) (err error) {
+	m := tr.module
+	version := tr.version
+	fmt.Fprintf(os.Stderr, "testing %s against version %s\n", tr.module.path, version)
 	// TODO: we really shouldn't need to be resolving this again
 	working, err := mt.tempDir("run-dir")
 	if err != nil {
@@ -498,10 +542,14 @@ func (mt *moduleTester) run(m *module, log *bytes.Buffer, version string) (err e
 		verbose:       mt.verbose,
 	}
 
+	start := time.Now()
+	defer func() {
+		tr.duration = time.Since(start)
+	}()
 	if mt.unsafe {
-		return runModule(log, rmi)
+		return runModule(tr.log, rmi)
 	}
-	return dockerRunModule(mt.image, log, rmi)
+	return dockerRunModule(mt.image, tr.log, rmi)
 }
 
 type runModuleInfo struct {
