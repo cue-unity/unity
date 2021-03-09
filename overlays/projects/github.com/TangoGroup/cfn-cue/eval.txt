@@ -1,4 +1,7 @@
+# eval
 cue eval test0.cue
+
+# Compare vs golden files
 cmp stdout $WORK/stdout.golden
 
 -- stdout.golden --
