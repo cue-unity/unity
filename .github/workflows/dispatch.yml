@@ -16,9 +16,9 @@ jobs:
       run: echo "${{ secrets.gerritCookie }}" > ~/.gitcookies
     - if: ${{ github.event.client_payload.payload.cl != null }}
       name: Update Gerrit CL message with starting message
-      run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Started
+      run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"tag":"unity","message":"Started
         unity run... see progress at ${{ github.event.repository.html_url }}/actions/runs/${{
-        github.run_id }}"}'' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{
+        github.run_id }}","labels":{"Code-Review":0}}'' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{
         github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit
         }}/review'
     - name: Install Go
@@ -37,23 +37,25 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.go-version }}-go-${{ hashFiles('**/go.sum')
           }}
         restore-keys: ${{ runner.os }}-${{ matrix.go-version }}-go-
-    - name: Run unity
-      run: echo ${{ toJson(github.event.client_payload.payload.versions) }} | xargs
-        ./_scripts/runUnity.sh
+    - id: unity_run
+      name: Run unity
+      run: "set -o pipefail\noutput=$(mktemp)\necho ${{ toJson(github.event.client_payload.payload.versions)
+        }} | xargs ./_scripts/runUnity.sh 2>&1 | tee $output\ncontent=\"$(cat $output)\"\ncontent=\"${content//'%'/'%25'}\"\ncontent=\"${content//$'\n'/'%0A'}\"\ncontent=\"${content//$'\r'/'%0D'}\"\necho
+        \"::set-output name=output::${content}\""
     - if: ${{ github.event.client_payload.payload.cl != null && failure() }}
       name: Post any failures for this matrix entry
-      run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Build
+      run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"tag":"unity","message":"Build
         failed for ${{ runner.os }}-${{ matrix.go-version }}; see ${{ github.event.repository.html_url
         }}/actions/runs/${{ github.run_id }} for more details","labels":{"Code-Review":-1}}''
         -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID
         }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review'
     - if: ${{ github.event.client_payload.payload.cl != null && success() }}
       name: Update Gerrit CL message with success message
-      run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"message":"Build
+      run: 'curl -f -s -H "Content-Type: application/json" --request POST --data ''{"tag":"unity","message":"Build
         succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id
-        }}","labels":{"Code-Review":1}}'' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{
-        github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit
-        }}/review'
+        }}\n\n${{ steps.unity_run.outputs.output }}","labels":{"Code-Review":1}}''
+        -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID
+        }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review'
     strategy:
       fail-fast: false
       matrix:
