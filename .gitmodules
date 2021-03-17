@@ -10,3 +10,6 @@
 [submodule "projects/github.com/TangoGroup/cfn-cue"]
 	path = projects/github.com/TangoGroup/cfn-cue
 	url = https://github.com/TangoGroup/cfn-cue.git
+[submodule "projects/github.com/Caascad/unity-tests"]
+	path = projects/github.com/Caascad/unity-tests
+	url = https://github.com/Caascad/unity-tests.git
