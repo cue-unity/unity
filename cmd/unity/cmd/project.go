@@ -436,7 +436,9 @@ func (mt *moduleTester) deriveModules(dir string) (modules []*module, err error)
 			return fmt.Errorf("failed to create module instance at %s: %v", modDir, err)
 		}
 		modules = append(modules, m)
-		return nil
+		// Do not recurse within the cue.mod - otherwise we might find modules
+		// in the vendor
+		return filepath.SkipDir
 	})
 	return
 }

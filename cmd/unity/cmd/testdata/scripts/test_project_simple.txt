@@ -17,6 +17,12 @@ stdout 'PASS'
 -- .unquote --
 cue.mod/tests/basic1.txt
 cue.mod/tests/basic2.txt
+-- cue.mod/pkg/acme.com/other/other.cue --
+package other
+
+y: 5
+-- cue.mod/pkg/acme.com/other/cue.mod/module.cue --
+module: "acme.com/other"
 -- cue.mod/module.cue --
 module: "mod.com"
 
@@ -40,4 +46,6 @@ Versions: ["PATH"]
 -- x.cue --
 package x
 
-x: 5
+import "acme.com/other"
+
+x: other.y
