@@ -27,5 +27,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Install unity
+      run: ./_scripts/installUnity.sh
     - name: Run unity
       run: ./_scripts/runUnity.sh

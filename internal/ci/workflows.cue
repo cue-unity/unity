@@ -72,6 +72,7 @@ test: _#bashWorkflow & {
 				_#staticcheck,
 				_#goModTidy,
 				_#checkGitClean,
+				_#installUnity,
 				_#runUnity,
 			]
 		}
@@ -92,6 +93,7 @@ dailycheck: _#bashWorkflow & {
 			steps: [
 				_#installGo,
 				_#checkoutCode,
+				_#installUnity,
 				_#runUnity,
 			]
 		}
@@ -128,6 +130,7 @@ dispatch: _#bashWorkflow & {
 				_#installGo,
 				_#checkoutCode,
 				_#cacheGoModules,
+				_#installUnity,
 				_#step & {
 					name: "Run unity"
 					id:   "unity_run"
@@ -182,7 +185,7 @@ dispatch: _#bashWorkflow & {
 				message: """
 					Build succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
 
-					${{ steps.unity_run.outputs.output }}
+					    $(echo '${{ steps.unity_run.outputs.output }}' | sed -e s/\n/\n    /g)
 					"""
 				labels: {
 					"Code-Review": 1
@@ -310,6 +313,11 @@ _#goTestRace: _#step & {
 _#checkGitClean: _#step & {
 	name: "Check that git is clean post generate and tests"
 	run:  "test -z \"$(git status --porcelain)\" || (git status; git diff; false)"
+}
+
+_#installUnity: _#step & {
+	name: "Install unity"
+	run:  "./_scripts/installUnity.sh"
 }
 
 _#runUnity: _#step & {
