@@ -17,6 +17,7 @@ package ci
 import (
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 	encjson "encoding/json"
+	"strconv"
 )
 
 workflowsDir: *"./" | string @tag(workflowsDir)
@@ -204,7 +205,7 @@ dispatch: _#bashWorkflow & {
 				}
 			}
 			res: #"""
-			curl -f -s -H "Content-Type: application/json" --request POST --data '\#(encjson.Marshal(#args))' -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
+			curl -f -s -H "Content-Type: application/json" --request POST --data \#(strconv.Quote(encjson.Marshal(#args))) -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
 			"""#
 		}
 	}
