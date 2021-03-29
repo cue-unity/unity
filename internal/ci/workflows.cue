@@ -186,7 +186,7 @@ dispatch: _#bashWorkflow & {
 				message: """
 					Build succeeded for ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
 
-					    $(echo '${{ steps.unity_run.outputs.output }}' | sed -e s/\n/\n    /g)
+					Click through for rough timing deltas vs. base versions.
 					"""
 				labels: {
 					"Code-Review": 1
