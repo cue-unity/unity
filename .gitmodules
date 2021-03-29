@@ -6,7 +6,7 @@
 	url = https://github.com/cue-sh/unity-example
 [submodule "projects/github.com/timberio/vector"]
 	path = projects/github.com/timberio/vector
-	url = https://github.com/timberio/vector
+	url = https://github.com/myitcvforks/vector
 [submodule "projects/github.com/TangoGroup/cfn-cue"]
 	path = projects/github.com/TangoGroup/cfn-cue
 	url = https://github.com/TangoGroup/cfn-cue.git
