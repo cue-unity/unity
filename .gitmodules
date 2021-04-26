@@ -13,3 +13,6 @@
 [submodule "projects/github.com/Caascad/unity-tests"]
 	path = projects/github.com/Caascad/unity-tests
 	url = https://github.com/Caascad/unity-tests.git
+[submodule "projects/github.com/addreas/homelab"]
+	path = projects/github.com/addreas/homelab
+	url = https://github.com/addreas/homelab.git
