@@ -7,12 +7,12 @@
 [submodule "projects/github.com/timberio/vector"]
 	path = projects/github.com/timberio/vector
 	url = https://github.com/timberio/vector
-[submodule "projects/github.com/TangoGroup/cfn-cue"]
-	path = projects/github.com/TangoGroup/cfn-cue
-	url = https://github.com/TangoGroup/cfn-cue.git
 [submodule "projects/github.com/Caascad/unity-tests"]
 	path = projects/github.com/Caascad/unity-tests
 	url = https://github.com/Caascad/unity-tests.git
 [submodule "projects/github.com/addreas/homelab"]
 	path = projects/github.com/addreas/homelab
 	url = https://github.com/addreas/homelab.git
+[submodule "projects/github.com/cue-sh/cfn-cue"]
+	path = projects/github.com/cue-sh/cfn-cue
+	url = https://github.com/cue-sh/cfn-cue.git
