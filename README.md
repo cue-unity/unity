@@ -24,6 +24,24 @@ The main features of `unity test` are:
   fails
 * easy addition of new projects to the `unity` corpus
 
+### How do I add my project to the `unity` corpus?
+
+Simple!
+
+* Add a new `git` submodule;
+* Create a PR;
+* Request a review;
+* Wait for the CI tests for pass;
+* We will merge, everyone will benefit!
+
+For projects which define their own `cue.mod/tests` manifest, you can use the
+[PR where `unity-example` was added to the
+corpus](https://github.com/cue-sh/unity/pull/23) as an example.
+
+Where a project cannot (yet) define such a manifest, the [`vector` project
+PR](https://github.com/cue-sh/unity/pull/33) provides an example of how to also
+define an overlay.
+
 ### Motivation
 
 CUE is currently missing:
