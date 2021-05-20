@@ -1,4 +1,7 @@
+[cuelang.org/issue/804] skip
+
 # export
+
 cue export test/full/ec2s3/test0.cue --out yaml
 
 # Compare vs golden files
