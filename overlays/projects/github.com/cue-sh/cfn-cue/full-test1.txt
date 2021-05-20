@@ -1,0 +1,22 @@
+# export
+cue export test/full/ec2s3/test1.cue --out yaml
+
+# Compare vs golden files
+cmp stdout $WORK/stdout.golden
+
+-- stdout.golden --
+template:
+  Resources:
+    S3Bucket1:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl:
+          Ref: S3AccessControl
+        BucketName: the-bucket
+    EC2Instance:
+      Type: AWS::EC2::Instance
+      Properties:
+        InstanceType:
+          Ref: InstanceType
+        ImageId:
+          Ref: LatestAmiId
