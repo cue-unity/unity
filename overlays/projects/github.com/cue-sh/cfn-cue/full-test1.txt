@@ -1,4 +1,4 @@
-[cuelang.org/issue/804] skip
+# [cuelang.org/issue/804] skip
 
 # export
 cue export test/full/ec2s3/test1.cue --out yaml
