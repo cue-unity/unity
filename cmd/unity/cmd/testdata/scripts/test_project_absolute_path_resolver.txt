@@ -3,7 +3,7 @@
 [!long] skip 'We clone the actual CUE repo here so this is a long test'
 
 # Prepare the CUE dir
-exec git clone --depth=1 --branch v0.3.0-beta.5 https://cue.googlesource.com/cue $WORK/_cue
+exec git clone --depth=1 --branch v0.3.0-beta.5 https://review.gerrithub.io/cue-lang/cue $WORK/_cue
 
 # Initial setup
 git init

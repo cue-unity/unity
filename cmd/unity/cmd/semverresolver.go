@@ -64,7 +64,7 @@ var _ resolver = (*semverResolver)(nil)
 func newSemverResolver(c resolverConfig) (resolver, error) {
 	urlTmpl := os.Getenv("UNITY_SEMVER_URL_TEMPLATE")
 	if urlTmpl == "" {
-		urlTmpl = "https://github.com/cuelang/cue/releases/download/{{.Version}}/{{.Artefact}}"
+		urlTmpl = "https://github.com/cue-lang/cue/releases/download/{{.Version}}/{{.Artefact}}"
 	}
 	t, err := template.New("tmpl").Parse(urlTmpl)
 	if err != nil {
