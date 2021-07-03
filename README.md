@@ -46,8 +46,8 @@ define an overlay.
 
 CUE is currently missing:
 
-* `cue test` (see https://github.com/cuelang/cue/issues/209)
-* full dependency management via modules (see https://github.com/cuelang/cue/issues/434)
+* `cue test` (see https://cuelang.org/issue/209)
+* full dependency management via modules (see https://cuelang.org/issue/434)
 * a module discovery site/API similar to [pkg.go.dev](https://pkg.go.dev)
 
 Hence:
@@ -179,7 +179,7 @@ $ go run github.com/cue-sh/unity/cmd/unity test --verbose commit:91abe0de26571ef
 
 First, the two base versions declared as supported in the `unity-example` manifest are run. Then, the command line
 version `commit:91abe0de26571ef337559580442f990ded0b32f9` is also tested, which is a reference to a [commit referenced
-by the `master` branch](https://github.com/cuelang/cue/tree/91abe0de26571ef337559580442f990ded0b32f9) of the CUE
+by the `master` branch](https://github.com/cue-lang/cue/tree/91abe0de26571ef337559580442f990ded0b32f9) of the CUE
 project.
 
 Any project that uses CUE can also use `unity` as part of its own testing/CI regime. For example, the [Play with
@@ -208,21 +208,21 @@ testing projects/github.com/TangoGroup/cfn-cue against version refs/changes/41/8
 
 In this case the base versions declared as supported by each project in the corpus are tested first. Then the command
 line specified `refs/changes/41/8841/3` is also tested. This is a reference to a [CL that was in progress at the
-time](https://cue-review.googlesource.com/c/cue/+/8841/2) (since merged).
+time](https://review.gerrithub.io/c/cue-lang/cue/+/8841/3) (since merged).
 
 ### Specifying CUE versions
 
 `unity` supports different ways of specifying the CUE version against which to test:
 
 * `go.mod` - the version of CUE resolved via the Go module in which the CUE module under test is found
-* `$semver` - any official [CUE (pre)release](https://github.com/cuelang/cue/releases), e.g. `v0.3.0-beta.5`
+* `$semver` - any official [CUE (pre)release](https://github.com/cue-lang/cue/releases), e.g. `v0.3.0-beta.5`
 * `/path/to/cue` - an absolute path to the location of a Go module where `cuelang.org/go` can be resolved (this could be
   the CUE project itself)
 * `PATH` - use the `cue` command found on your `PATH`. This binary must be compiled for the operating system and
   architecture of the target Docker image if you are running in normal/safe mode
-* `commit:$hash` - a commit on the `master` branch of the [CUE project](https://github.com/cuelang/cue), e.g.
-  [`commit:a0e19707b99d8e76caf3234c42761a73d0fb85f7`](https://github.com/cuelang/cue/commit/a0e19707b99d8e76caf3234c42761a73d0fb85f7)
-* `$CLref` - a [CUE project Gerrit](https://cue-review.googlesource.com) CL patchset reference, e.g.
+* `commit:$hash` - a commit on the `master` branch of the [CUE project](https://review.gerrithub.io/plugins/gitiles/cue-lang/cue/), e.g.
+  [`commit:a0e19707b99d8e76caf3234c42761a73d0fb85f7`](https://review.gerrithub.io/plugins/gitiles/cue-lang/cue/+/a0e19707b99d8e76caf3234c42761a73d0fb85f7)
+* `$CLref` - a [CUE project Gerrit](https://review.gerrithub.io/q/project:cue-lang%252Fcue) CL patchset reference, e.g.
   `refs/changes/21/8821/3`
 
 ### FAQ

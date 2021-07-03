@@ -122,7 +122,7 @@ dispatch: _#bashWorkflow & {
 			strategy:  _#testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
-				_#writeCookiesFile & {
+				_#writeNetrcFile & {
 					if: "${{ \(_#ifIsCLVersion) }}"
 				},
 				_#startCLBuild & {
@@ -205,7 +205,7 @@ dispatch: _#bashWorkflow & {
 				}
 			}
 			res: #"""
-			curl -f -s -H "Content-Type: application/json" --request POST --data \#(strconv.Quote(encjson.Marshal(#args))) -b ~/.gitcookies https://cue-review.googlesource.com/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
+			curl -f -s -H "Content-Type: application/json" --request POST --data \#(strconv.Quote(encjson.Marshal(#args))) https://review.gerrithub.io/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
 			"""#
 		}
 	}
@@ -228,9 +228,16 @@ _#linuxMachine:   "ubuntu-18.04"
 _#macosMachine:   "macos-10.15"
 _#windowsMachine: "windows-2019"
 
-_#writeCookiesFile: _#step & {
-	name: "Write the gitcookies file"
-	run:  "echo \"${{ secrets.gerritCookie }}\" > ~/.gitcookies"
+_#writeNetrcFile: _#step & {
+	name: "Write netrc file for cueckoo Gerrithub"
+	run: """
+		cat <<EOD > ~/.netrc
+		machine review.gerrithub.io
+		login cueckoo
+		password ${{ secrets.CUECKOO_GERRITHUB_PASSWORD }}
+		EOD
+		chmod 600 ~/.netrc
+		"""
 }
 
 _#testStrategy: {

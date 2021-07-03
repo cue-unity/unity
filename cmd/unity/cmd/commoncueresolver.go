@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	cueGitSource = "https://cue.googlesource.com/cue"
+	cueGitSource = "https://review.gerrithub.io/cue-lang/cue"
 )
 
 type commonCUEResolver struct {
