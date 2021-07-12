@@ -205,7 +205,7 @@ dispatch: _#bashWorkflow & {
 				}
 			}
 			res: #"""
-			curl -f -s -H "Content-Type: application/json" --request POST --data \#(strconv.Quote(encjson.Marshal(#args))) https://review.gerrithub.io/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
+			curl -f -n -s -H "Content-Type: application/json" --request POST --data \#(strconv.Quote(encjson.Marshal(#args))) https://review.gerrithub.io/a/changes/${{ github.event.client_payload.payload.cl.changeID }}/revisions/${{ github.event.client_payload.payload.cl.commit }}/review
 			"""#
 		}
 	}
