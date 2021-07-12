@@ -8,9 +8,9 @@ git add -A
 git commit -m 'Initial commit'
 
 # Test - ref corresponds to the same commit as v0.3.0-beta.5
-unity test refs/changes/07/8707/3
+unity test refs/changes/69/520169/1
 ! stdout .+
-stderr 'ok.*mod\.com.*refs/changes/07/8707/3'
+stderr 'ok.*mod\.com.*refs/changes/69/520169/1'
 
 -- .unquote --
 cue.mod/tests/basic.txt
