@@ -1,9 +1,6 @@
 [submodule "projects/github.com/play-with-go/play-with-go"]
 	path = projects/github.com/play-with-go/play-with-go
 	url = https://github.com/play-with-go/play-with-go
-[submodule "projects/github.com/cue-sh/unity-example"]
-	path = projects/github.com/cue-sh/unity-example
-	url = https://github.com/cue-sh/unity-example
 [submodule "projects/github.com/timberio/vector"]
 	path = projects/github.com/timberio/vector
 	url = https://github.com/timberio/vector
@@ -16,3 +13,6 @@
 [submodule "projects/github.com/cue-sh/cfn-cue"]
 	path = projects/github.com/cue-sh/cfn-cue
 	url = https://github.com/cue-sh/cfn-cue.git
+[submodule "projects/github.com/cue-lang/unity-example"]
+	path = projects/github.com/cue-lang/unity-example
+	url = https://github.com/cue-lang/unity-example

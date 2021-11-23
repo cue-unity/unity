@@ -1,3 +1,3 @@
-module github.com/cue-sh/unity/projects
+module github.com/cue-lang/unity/projects
 
 go 1.17

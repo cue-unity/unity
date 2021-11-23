@@ -32,7 +32,7 @@ import (
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
-	"github.com/cue-sh/unity"
+	"github.com/cue-lang/unity"
 	"github.com/olekukonko/tablewriter"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"

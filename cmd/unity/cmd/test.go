@@ -23,7 +23,7 @@ import (
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
-	"github.com/cue-sh/unity"
+	"github.com/cue-lang/unity"
 	"github.com/spf13/cobra"
 )
 

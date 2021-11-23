@@ -102,7 +102,7 @@ dailycheck: _#bashWorkflow & {
 }
 
 dispatch: _#bashWorkflow & {
-	// These constants are defined by github.com/cue-sh/tools/cmd/cueckoo
+	// These constants are defined by github.com/cue-lang/tools/cmd/cueckoo
 	_#runtrybot: "runtrybot"
 	_#mirror:    "mirror"
 	_#importpr:  "importpr"
@@ -221,7 +221,7 @@ _#job:  ((json.#Workflow & {}).jobs & {x: _}).x
 _#step: ((_#job & {steps:                 _}).steps & [_])[0]
 
 // Use a specific latest version for release builds
-_#latestStableGo: "1.16"
+_#latestStableGo: "1.17.3"
 _#codeGenGo:      _#latestStableGo
 
 _#linuxMachine:   "ubuntu-18.04"
