@@ -33,7 +33,7 @@ const (
 
 	// moduleSelf is used to identify build info for the running unity
 	// process
-	moduleSelf = "github.com/cue-sh/unity"
+	moduleSelf = "github.com/cue-lang/unity"
 
 	// mainSelf is the package path of unity the main package
 	mainSelf = moduleSelf + "/cmd/unity"

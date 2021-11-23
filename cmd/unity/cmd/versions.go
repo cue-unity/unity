@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cue-sh/unity/internal/copy"
+	"github.com/cue-lang/unity/internal/copy"
 )
 
 var errNoMatch = errors.New("resolver not appropriate for version")

@@ -164,7 +164,7 @@ func (bh *buildHelper) pathToSelf(selfDir, tempDir string, testing bool) (self s
 	if !ok || !semver.IsValid(bi.Main.Version) || !modulesAreValid {
 		// Assert that we are running in the context of the module that
 		// provides the main package. i.e. that the main module is
-		// github.com/cue-sh/unity. This is not guaranteed to be the case
+		// github.com/cue-lang/unity. This is not guaranteed to be the case
 		// but for the purposes of what we need this is probably sufficient.
 		// If it isn't, then we cross that bridge when we come to it
 		var listInfo struct {

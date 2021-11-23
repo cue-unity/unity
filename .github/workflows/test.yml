@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         go-version:
-        - "1.16"
+        - 1.17.3
         os:
         - ubuntu-18.04
     runs-on: ${{ matrix.os }}
@@ -45,7 +45,7 @@ jobs:
       run: go env -w GOFLAGS=-tags=long
     - name: go mod verify
       run: go mod verify
-    - if: matrix.go-version == '1.16' && matrix.os != 'windows-2019'
+    - if: matrix.go-version == '1.17.3' && matrix.os != 'windows-2019'
       name: Generate
       run: go generate ./...
     - name: Test
