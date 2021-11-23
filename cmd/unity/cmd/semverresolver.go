@@ -219,7 +219,7 @@ func (sr *semverResolver) resolveSemverImpl(key [32]byte, version string) error 
 		}
 	}
 	if successCount != 1 {
-		return fmt.Errorf("failed to resolve %q to a single successful response", version)
+		return fmt.Errorf("failed to resolve %q to a single successful response (got %v)", version, successCount)
 	}
 	archive, err := gzip.NewReader(resp.body)
 	if err != nil {
@@ -265,6 +265,7 @@ func buildOldStyleGoreleaser() func(version, goos, goarch string) (string, error
 		goReleaserGOARCHMappings = map[string]string{
 			"386":   "i386",
 			"amd64": "x86_64",
+			"arm64": "arm64",
 		}
 	)
 	return func(version, goos, goarch string) (string, error) {
