@@ -1,3 +1,3 @@
 package tests
 
-Versions: ["v0.3.0-beta.6"]
+Versions: ["commit:91476ab2151490e11c044fa48a95c713cf019b0b"]
