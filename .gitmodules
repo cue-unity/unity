@@ -13,6 +13,6 @@
 [submodule "projects/github.com/cue-sh/cfn-cue"]
 	path = projects/github.com/cue-sh/cfn-cue
 	url = https://github.com/cue-sh/cfn-cue.git
-[submodule "projects/github.com/cue-lang/unity-example"]
-	path = projects/github.com/cue-lang/unity-example
-	url = https://github.com/cue-lang/unity-example
+[submodule "projects/github.com/cue-unity/example"]
+	path = projects/github.com/cue-unity/example
+	url = https://github.com/cue-unity/example

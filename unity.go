@@ -14,10 +14,13 @@
 
 package unity
 
-// TODO: when we get a solution for golang.org/issue/44287 we can switch to
-// using go:embed
+import (
+	"embed"
+
+	"github.com/cue-unity/unity/internal/unityembed"
+)
+
 //go:generate go run cuelang.org/go/cmd/cue get go --local .
-//go:generate go run ./internal/genembed .
 
 // Manifest defines the schema of the manifest that a module must define to be
 // added to the unity test setup
@@ -28,4 +31,9 @@ type Manifest struct {
 	Versions []string
 }
 
-var InstanceData = unityInstanceData
+//go:embed *.cue
+var unityFS embed.FS
+
+func init() {
+	unityembed.FS = unityFS
+}

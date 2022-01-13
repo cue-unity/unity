@@ -32,7 +32,7 @@ import (
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
-	"github.com/cue-lang/unity"
+	"github.com/cue-unity/unity"
 	"github.com/olekukonko/tablewriter"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"
@@ -66,9 +66,6 @@ func testProject(cmd *Command, mt *moduleTester, versions []string) error {
 }
 
 func (mt *moduleTester) test(modules []*module, versions []string) error {
-	// if !mt.unsafe {
-	// 	return fmt.Errorf("we don't yet support running in safe mode")
-	// }
 	done := make(map[*module]map[string]bool)
 
 	firstResult := make(map[*module]*testResult)
@@ -76,7 +73,7 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	// At this stage, we know that toTest is a list of
 	// valid and fully resolved versions to test
 	var tested []*testResult
-	verify := func(whatToTest func(*module) []string) {
+	verify := func(allowUpdate bool, whatToTest func(*module) []string) {
 		// var wg sync.WaitGroup
 		for _, m := range modules {
 			m := m
@@ -104,7 +101,7 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 				// wg.Add(1)
 				// go func() {
 				// 	defer wg.Done()
-				res.err = mt.run(res)
+				res.err = mt.run(res, allowUpdate)
 				// }()
 			}
 		}
@@ -125,17 +122,26 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	tw.SetTablePadding("  ")
 	tw.SetNoWhiteSpace(true)
 
+	// The logic on when we allow updates is driven by the versions that may
+	// have been passed as arguments. With no versions supplied as arguments
+	// we allow updating for the base versions of a module (ignoring the
+	// fact that there might be conflicts between multiple versions). With
+	// a single version supplied as an argument, we don't allow updating
+	// the base versions, but do the supplied version. Otherwise, updating is
+	// not permitted.
+
 	// First check the base versions
-	verify(func(m *module) []string { return m.manifest.Versions })
+	verify(len(versions) == 0, func(m *module) []string { return m.manifest.Versions })
 	sawError := false
 	for _, tr := range tested {
 		if tr.err != nil {
 			sawError = true
 		}
 	}
-	// Only run the additional versions if we passed the base version
+	// Only run the additional versions if the base version passed with
+	// no failures
 	if !sawError && len(versions) > 0 {
-		verify(func(*module) []string { return versions })
+		verify(len(versions) == 1, func(*module) []string { return versions })
 	}
 
 	logTime := func(tr *testResult) {
@@ -207,7 +213,7 @@ type moduleTester struct {
 	// versionResolver is the helper to resolve CUE versions for testing
 	versionResolver *versionResolver
 
-	runtime *cue.Runtime
+	runtime *cue.Context
 
 	// manifestDef is the CUE definition from the unity package
 	manifestDef cue.Value
@@ -331,8 +337,8 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 	manifestInst := load.Instances([]string{"."}, &load.Config{
 		Dir: manifestDir,
 	})
-	manifestInput, err := mt.runtime.Build(manifestInst[0])
-	if err != nil {
+	manifestInput := mt.runtime.BuildInstance(manifestInst[0])
+	if err := manifestInput.Err(); err != nil {
 		return nil, fmt.Errorf("failed to load tests manifest from %s: %v", manifestDir, err)
 	}
 
@@ -484,7 +490,7 @@ type module struct {
 	hasStaged bool
 }
 
-func (mt *moduleTester) run(tr *testResult) (err error) {
+func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	m := tr.module
 	version := tr.version
 	// TODO: we really shouldn't need to be resolving this again
@@ -541,7 +547,7 @@ func (mt *moduleTester) run(tr *testResult) (err error) {
 		testerRelPath: m.testerRelPath,
 		cuePath:       cuePath,
 		version:       version,
-		update:        mt.update,
+		update:        allowUpdate && mt.update,
 		verbose:       mt.verbose,
 	}
 

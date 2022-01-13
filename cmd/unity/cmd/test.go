@@ -16,15 +16,22 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/errors"
-	"github.com/cue-lang/unity"
+	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
+
+	// imported for side effect of setting
+	// internal/unityembed exported var
+	_ "github.com/cue-unity/unity"
+	"github.com/cue-unity/unity/internal/unityembed"
 )
 
 const (
@@ -44,7 +51,7 @@ const (
 	//
 	// TODO: add support for custom docker images. Such images must support the interface
 	// of requiring USER_UID and USER_GID
-	dockerImage = "docker.io/cueckoo/unity:72a5a022b434a768e8c5ae5be7082d780211accd"
+	dockerImage = "docker.io/cueckoo/unity@sha256:e9480dcb2a99ea7a128c0d560964aa4d1f642485da1328b1daa2e46800e33b59"
 )
 
 // newTestCmd creates a new test command
@@ -77,7 +84,7 @@ Need to document this command
 func testDef(c *Command, args []string) error {
 	debug := flagDebug.Bool(c)
 
-	var r cue.Runtime
+	ctx := cuecontext.New()
 
 	// dir is the context within which we will be running
 	dir := flagTestDir.String(c)
@@ -106,14 +113,9 @@ func testDef(c *Command, args []string) error {
 	}
 	gitRoot = strings.TrimSpace(gitRoot)
 
-	// Load the #Tests definition
-	insts, err := r.Unmarshal(unity.InstanceData)
-	if err != nil {
-		return fmt.Errorf("failed to load embedded unity instance: %v", err)
-	}
-	manifestDef := insts[0].LookupDef("#Manifest")
+	manifestDef := loadManifestSchema(ctx)
 	if err := manifestDef.Err(); err != nil {
-		return fmt.Errorf("failed to resolve #Manifest definition: %v", err)
+		return fmt.Errorf("failed to load #Manifest definition: %v", err)
 	}
 
 	// Verify that the overlay directory, if provided, exists
@@ -168,6 +170,11 @@ func testDef(c *Command, args []string) error {
 		return fmt.Errorf("could not create version resolver: %v", err)
 	}
 
+	// Perform some basic validation on the --update flag.
+	if len(args) > 1 && flagTestUpdate.Bool(c) {
+		return fmt.Errorf("cannot supply --update and multiple versions")
+	}
+
 	mt, err := newModuleTester(moduleTester{
 		self:            self, // only used in safe mode
 		buildHelper:     bh,
@@ -175,7 +182,7 @@ func testDef(c *Command, args []string) error {
 		gitRoot:         gitRoot,
 		overlayDir:      overlayDir,
 		versionResolver: vr,
-		runtime:         &r,
+		runtime:         ctx,
 		manifestDef:     manifestDef,
 		unsafe:          flagTestUnsafe.Bool(c),
 		update:          flagTestUpdate.Bool(c),
@@ -198,4 +205,29 @@ func testDef(c *Command, args []string) error {
 		exit()
 	}
 	return err
+}
+
+func loadManifestSchema(ctx *cue.Context) cue.Value {
+	overlay := make(map[string]load.Source)
+	fs.WalkDir(unityembed.FS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			panic(err) // this is seriously bad
+		}
+		if !d.Type().IsRegular() {
+			return nil
+		}
+		contents, err := unityembed.FS.ReadFile(path)
+		if err != nil {
+			panic(err) // this is seriously bad
+		}
+		overlay[filepath.Join("/", path)] = load.FromBytes(contents)
+		return nil
+	})
+	conf := &load.Config{
+		Dir:     "/",
+		Overlay: overlay,
+	}
+	bps := load.Instances([]string{"."}, conf)
+	return ctx.BuildInstance(bps[0]).LookupPath(cue.MakePath(cue.Def("Manifest")))
+
 }
