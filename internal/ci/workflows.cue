@@ -102,7 +102,7 @@ dailycheck: _#bashWorkflow & {
 }
 
 dispatch: _#bashWorkflow & {
-	// These constants are defined by github.com/cue-lang/tools/cmd/cueckoo
+	// These constants are defined by github.com/cue-sh/tools/cmd/cueckoo
 	_#runtrybot: "runtrybot"
 	_#mirror:    "mirror"
 	_#importpr:  "importpr"

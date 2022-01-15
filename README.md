@@ -19,7 +19,7 @@ The main features of `unity test` are:
   under test
 * multiple ways of specifying CUE versions to test against (see below)
 * a `--corpus` mode for running `unity` across the `git` submodules of a project. The `unity` project itself uses this
-  mode to test the corpus under https://github.com/cue-lang/unity/tree/main/projects
+  mode to test the corpus under https://github.com/cue-unity/unity/tree/main/projects
 * an `--update` flag to update golden files in a project when a `cmp`-esque comparison in a `testscript` test script
   fails
 * easy addition of new projects to the `unity` corpus
@@ -35,11 +35,11 @@ Simple!
 * We will merge, everyone will benefit!
 
 For projects which define their own `cue.mod/tests` manifest, you can use the
-[PR where `unity-example` was added to the
-corpus](https://github.com/cue-lang/unity/pull/23) as an example.
+[PR where `cue-unity/example` was added to the
+corpus](https://github.com/cue-unity/unity/pull/23) as an example.
 
 Where a project cannot (yet) define such a manifest, the [`vector` project
-PR](https://github.com/cue-lang/unity/pull/33) provides an example of how to also
+PR](https://github.com/cue-unity/unity/pull/33) provides an example of how to also
 define an overlay.
 
 ### Motivation
@@ -66,15 +66,33 @@ Hence:
 ### Using `unity`
 
 `unity test` is currently the only implemented command. `unity test` works in two modes: project mode (default) or
-`--corpus` mode.
+`--corpus` mode which are described in detail below. As a quick start:
+
+```bash
+git clone https://github.com/cue-unity/unity
+cd unity
+git submodule update -f --init --recursive
+
+# Run unity in corpus mode using overlays testing base versions declared in
+# corpus projects
+go run github.com/cue-unity/unity/cmd/unity test --corpus --overlay overlays
+
+# As above, but also test against the source version of CUE found in the
+# directory /path/to/cuesrc
+go run github.com/cue-unity/unity/cmd/unity test --corpus --overlay overlays /path/to/cuesrc
+
+# Allow unity to update cmp failures in test assertions when the second
+# argument refers to a file within the testscript archive
+go run github.com/cue-unity/unity/cmd/unity test --update --corpus --overlay overlays /path/to/cuesrc
+```
 
 #### Project mode
 
 In project mode, `unity` runs within the context of a project that declares the `unity` manifest within the
 `cue.mod/tests` directory. The `unity` manifest is CUE package value that satisfies the
-[`#Manifest`](https://github.com/cue-lang/unity/blob/de07b0f83e70913697b2f70f660db888d11059d4/unity_go_gen.cue#L9-L14)
-definition. The [`unity-example`](https://github.com/cue-lang/unity-example) project [declares such a
-manifest](https://github.com/cue-lang/unity-example/blob/50254fe95093f9460a0e12debf7b4684763a1a5c/cue.mod/tests/tests.cue):
+[`#Manifest`](https://github.com/cue-unity/unity/blob/de07b0f83e70913697b2f70f660db888d11059d4/unity_go_gen.cue#L9-L14)
+definition. The [`cue-unity/example`](https://github.com/cue-unity/example) project [declares such a
+manifest](https://github.com/cue-unity/example/blob/50254fe95093f9460a0e12debf7b4684763a1a5c/cue.mod/tests/tests.cue):
 
 ```
 package tests
@@ -87,8 +105,8 @@ correct, or more precisely against which its `unity` tests are known to pass.
 
 The `cue.mod/tests` directory also contains a number of
 [`testscript`](https://pkg.go.dev/github.com/rogpeppe/go-internal/testscript) test scripts. Again, considering the
-`unity-example` project, it defines a basic
-[`eval.txt`](https://github.com/cue-lang/unity-example/blob/50254fe95093f9460a0e12debf7b4684763a1a5c/cue.mod/tests/eval.txt)
+`cue-unity/example` project, it defines a basic
+[`eval.txt`](https://github.com/cue-unity/example/blob/50254fe95093f9460a0e12debf7b4684763a1a5c/cue.mod/tests/eval.txt)
 test script as follows:
 
 ```
@@ -111,16 +129,16 @@ Every such test script is run:
 * with all files in the test script archive expand to `$WORK`
 * with an initial working directory of `$WORK/repo/path/to/module` for convenience
 
-Hence the above example test script makes a copy of `unity-example` available at `$WORK/repo`. The script has an initial
-working directory of `$WORK/repo`, because the `unity-example` CUE module is defined at the root of that project
+Hence the above example test script makes a copy of `cue-unity/example` available at `$WORK/repo`. The script has an initial
+working directory of `$WORK/repo`, because the `cue-unity/example` CUE module is defined at the root of that project
 repository. Therefore, the script runs `cue eval ./...` in the context of a copy of the CUE module under test. The
 golden file `stdout.golden` is extracted to `$WORK`, hence the comparison `cmp stdout $WORK/stdout.golden` needs to
 specify the full path to `stdout.golden` because the working directory is `$WORK/repo`.
 
-Here is the output from running `unity` within the `unity-example` project:
+Here is the output from running `unity` within the `cue-unity/example` project:
 
 ```
-$ go run github.com/cue-lang/unity/cmd/unity test --verbose commit:91abe0de26571ef337559580442f990ded0b32f9
+$ go run github.com/cue-unity/unity/cmd/unity test --verbose commit:91abe0de26571ef337559580442f990ded0b32f9
 --- PASS: eval/go.mod
 
         WORK=$WORK
@@ -177,7 +195,7 @@ $ go run github.com/cue-lang/unity/cmd/unity test --verbose commit:91abe0de26571
         PASS
 ```
 
-First, the two base versions declared as supported in the `unity-example` manifest are run. Then, the command line
+First, the two base versions declared as supported in the `cue-unity/example` manifest are run. Then, the command line
 version `commit:91abe0de26571ef337559580442f990ded0b32f9` is also tested, which is a reference to a [commit referenced
 by the `master` branch](https://github.com/cue-lang/cue/tree/91abe0de26571ef337559580442f990ded0b32f9) of the CUE
 project.
@@ -186,7 +204,7 @@ Any project that uses CUE can also use `unity` as part of its own testing/CI reg
 Go](https://play-with-go.dev/) project [runs `unity` as part of its GitHub
 workflows](https://github.com/play-with-go/play-with-go/blob/2c980fc5b1956bb05f259b986dd18d9f58efe869/.github/workflows/test.yml#L65-L66).
 This fits nicely with the fact that the Play with Go project is [also part of the `unity`
-corpus](https://github.com/cue-lang/unity/tree/de07b0f83e70913697b2f70f660db888d11059d4/projects/github.com/play-with-go).
+corpus](https://github.com/cue-unity/unity/tree/de07b0f83e70913697b2f70f660db888d11059d4/projects/github.com/play-with-go).
 
 #### `--corpus` mode
 
@@ -194,14 +212,14 @@ In `--corpus` mode, `unity` tests all of the `git` submodules of a repository in
 repository itself as an example corpus:
 
 ```
-$ go run github.com/cue-lang/unity/cmd/unity test --corpus --overlay overlays --nopath refs/changes/41/8841/3
+$ go run github.com/cue-unity/unity/cmd/unity test --corpus --overlay overlays --nopath refs/changes/41/8841/3
 testing projects/github.com/play-with-go/play-with-go against version go.mod
-testing projects/github.com/cue-lang/unity-example against version go.mod
-testing projects/github.com/cue-lang/unity-example against version v0.3.0-beta.5
+testing projects/github.com/cue-unity/example against version go.mod
+testing projects/github.com/cue-unity/example against version v0.3.0-beta.5
 testing projects/github.com/timberio/vector against version v0.3.0-beta.5
 testing projects/github.com/TangoGroup/cfn-cue against version v0.3.0-beta.5
 testing projects/github.com/play-with-go/play-with-go against version refs/changes/41/8841/3
-testing projects/github.com/cue-lang/unity-example against version refs/changes/41/8841/3
+testing projects/github.com/cue-unity/example against version refs/changes/41/8841/3
 testing projects/github.com/timberio/vector against version refs/changes/41/8841/3
 testing projects/github.com/TangoGroup/cfn-cue against version refs/changes/41/8841/3
 ```
@@ -227,5 +245,5 @@ time](https://review.gerrithub.io/c/cue-lang/cue/+/8841/3) (since merged).
 
 ### FAQ
 
-Please see [the wiki FAQ](https://github.com/cue-lang/unity/wiki/FAQ).
+Please see [the wiki FAQ](https://github.com/cue-unity/unity/wiki/FAQ).
 

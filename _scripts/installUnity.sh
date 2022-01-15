@@ -8,7 +8,7 @@ commit=$(git rev-parse HEAD)
 export GOBIN=$PWD/.bin
 if [ "${GITHUB_REF:-}" == "refs/heads/main" ]
 then
-	go install github.com/cue-lang/unity/cmd/unity@$commit
+	go install github.com/cue-unity/unity/cmd/unity@$commit
 else
-	go install github.com/cue-lang/unity/cmd/unity
+	go install github.com/cue-unity/unity/cmd/unity
 fi

@@ -25,7 +25,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cue-lang/unity/internal/cuetest"
+	"github.com/cue-unity/unity/internal/cuetest"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/go-internal/txtar"
 )

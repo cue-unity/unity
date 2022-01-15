@@ -19,7 +19,7 @@ package main
 import (
 	"os"
 
-	"github.com/cue-lang/unity/cmd/unity/cmd"
+	"github.com/cue-unity/unity/cmd/unity/cmd"
 )
 
 func main() {
