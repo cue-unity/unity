@@ -16,3 +16,6 @@
 [submodule "projects/github.com/cue-unity/example"]
 	path = projects/github.com/cue-unity/example
 	url = https://github.com/cue-unity/example
+[submodule "projects/github.com/bradbeck/cue-cmd-repro"]
+	path = projects/github.com/bradbeck/cue-cmd-repro
+	url = https://github.com/bradbeck/cue-cmd-repro
