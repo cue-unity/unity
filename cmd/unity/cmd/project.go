@@ -498,7 +498,11 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory for run: %v", err)
 	}
-	cuePath := filepath.Join(working, "cue")
+	cuePath := filepath.Join(working, ".cuebin", "cue")
+	// Create the cuePath containing directory
+	if err := os.Mkdir(filepath.Dir(cuePath), 0777); err != nil {
+		return fmt.Errorf("failed to create cue bin directory for %q: %v", cuePath, err)
+	}
 	tr.resolvedVersion, err = m.tester.versionResolver.resolve(version, m.root, working, cuePath)
 	if err != nil {
 		return err
@@ -581,6 +585,10 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 		Setup: func(e *testscript.Env) error {
 			// Limit concurrency across all testscript runs
 			// e.Defer(m.tester.limit())
+
+			// Ensure that cue is on the PATH
+			newPath := filepath.Dir(info.cuePath) + string(os.PathListSeparator) + e.Getenv("PATH")
+			e.Setenv("PATH", newPath)
 
 			// Set the working directory to be module
 			e.Cd = filepath.Join(e.WorkDir, repoDir, info.relPath)
