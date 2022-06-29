@@ -221,12 +221,12 @@ _#job:  ((json.#Workflow & {}).jobs & {x: _}).x
 _#step: ((_#job & {steps:                 _}).steps & [_])[0]
 
 // Use a specific latest version for release builds
-_#latestStableGo: "1.17.3"
+_#latestStableGo: "1.18.x"
 _#codeGenGo:      _#latestStableGo
 
-_#linuxMachine:   "ubuntu-18.04"
-_#macosMachine:   "macos-10.15"
-_#windowsMachine: "windows-2019"
+_#linuxMachine:   "ubuntu-20.04"
+_#macosMachine:   "macos-11"
+_#windowsMachine: "windows-2022"
 
 _#writeNetrcFile: _#step & {
 	name: "Write netrc file for cueckoo Gerrithub"
