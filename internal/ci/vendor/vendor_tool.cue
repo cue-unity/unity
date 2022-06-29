@@ -47,7 +47,7 @@ command: vendorgithubschema: {
 	}
 	importJSONSchema: exec.Run & {
 		stdin:  getJSONSchema.response.body
-		cmd:    "go run cuelang.org/go/cmd/cue import -f -p json -l #Workflow: jsonschema: - -o -"
+		cmd:    "go run cuelang.org/go/cmd/cue@v0.4.3 import -f -p json -l #Workflow: jsonschema: - -o -"
 		stdout: string
 	}
 	vendorGitHubWorkflowSchema: file.Create & {

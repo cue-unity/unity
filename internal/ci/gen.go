@@ -14,5 +14,5 @@
 
 package ci
 
-//go:generate go run cuelang.org/go/cmd/cue cmd vendorgithubschema ./vendor
-//go:generate go run cuelang.org/go/cmd/cue cmd genworkflows
+//go:generate go run cuelang.org/go/cmd/cue@v0.4.3 cmd vendorgithubschema ./vendor
+//go:generate go run cuelang.org/go/cmd/cue@v0.4.3 cmd genworkflows

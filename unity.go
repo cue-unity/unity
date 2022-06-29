@@ -20,7 +20,7 @@ import (
 	"github.com/cue-unity/unity/internal/unityembed"
 )
 
-//go:generate go run cuelang.org/go/cmd/cue get go --local .
+//go:generate go run cuelang.org/go/cmd/cue@v0.4.3 get go --local .
 
 // Manifest defines the schema of the manifest that a module must define to be
 // added to the unity test setup
