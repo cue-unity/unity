@@ -9,5 +9,4 @@ require (
 	github.com/spf13/cobra v1.0.0
 	golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449
 	golang.org/x/text v0.3.3
-	honnef.co/go/tools v0.1.2
 )

@@ -305,7 +305,7 @@ _#goGenerate: _#step & {
 
 _#staticcheck: _#step & {
 	name: "staticcheck"
-	run:  "go run honnef.co/go/tools/cmd/staticcheck ./..."
+	run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.3.2 ./..."
 }
 
 _#goTest: _#step & {
