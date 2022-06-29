@@ -13,4 +13,4 @@ else
 	go install github.com/cue-unity/unity/cmd/unity
 fi
 
-exec $GOBIN/unity test --corpus --overlay overlays --nopath "$@"
+$GOBIN/unity test --corpus --overlay overlays --nopath "$@"

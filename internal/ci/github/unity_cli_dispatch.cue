@@ -14,24 +14,33 @@
 
 package github
 
-daily_check: _base.#bashWorkflow & {
+import (
+	"github.com/SchemaStore/schemastore/src/schemas/json"
+)
 
-	name: "Daily check"
-	on: {
-		schedule: [{cron: "0 9 * * *"}]
-	}
-
+// unity_cli_dispatch is the "regular" repository dispatch triggered by
+// cmd/cueckkoo unity. This supplies arbitrary versions to be tested.
+// For such a trigger, the payload.cl field is null.
+unity_cli_dispatch: _base.#bashWorkflow & {
+	on: ["repository_dispatch"]
 	jobs: {
 		test: {
+			if:        "${{ github.event.client_payload.type == '\(_gerrithub.#dispatchUnity)' && github.event.client_payload.payload.cl == null }}"
 			strategy:  _#testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
 				_base.#installGo,
-				_base.#checkoutCode & {
-					with: submodules: true
-				},
+				_base.#checkoutCode,
+				_base.#cacheGoModules,
 				_#installUnity,
-				_#runUnity,
+				json.#step & {
+					name: "Run unity"
+					id:   "unity_run"
+					run: """
+						set -o pipefail
+						echo ${{ toJson(github.event.client_payload.payload.versions) }} | xargs ./_scripts/runUnity.sh
+						"""
+				},
 			]
 		}
 	}
