@@ -14,15 +14,20 @@
 
 package github
 
-trybot: _#bashWorkflow & {
+import (
+	"github.com/SchemaStore/schemastore/src/schemas/json"
+)
 
+// The TryBot workflow.
+trybot: _base.#bashWorkflow & {
 	name: "TryBot"
+
 	on: {
 		push: {
-			branches: ["main"]
-			tags: [_#releaseTagPattern]
+			branches: ["trybot/*/*", _#defaultBranch] // don't run for unity/*/* branches
+			"tags-ignore": [_#releaseTagPattern]
 		}
-		pull_request: branches: ["**"]
+		pull_request: {}
 	}
 
 	jobs: {
@@ -30,25 +35,79 @@ trybot: _#bashWorkflow & {
 			strategy:  _#testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
-				_#installGo,
-				_#checkoutCode,
-				_#cacheGoModules,
-				_#step & {
-					if:  "${{ \(_#isMain) }}"
+				_base.#installGo,
+				_base.#checkoutCode & {
+					// "pull_request" builds will by default use a merge commit,
+					// testing the PR's HEAD merged on top of the master branch.
+					// For consistency with Gerrit, avoid that merge commit entirely.
+					// This doesn't affect "push" builds, which never used merge commits.
+					with: ref:        "${{ github.event.pull_request.head.sha }}"
+					with: submodules: true
+				},
+				_base.#earlyChecks,
+				_base.#cacheGoModules,
+				json.#step & {
+					if:  "${{ \(_base.#isDefaultBranch) }}"
 					run: "echo CUE_LONG=true >> $GITHUB_ENV"
 				},
 				_#goModVerify,
 				_#goGenerate,
 				_#goTest,
+				_#goCheck,
 				_#goTestRace & {
-					if: "${{ \(_#isMain) }}"
+					if: "${{ \(_base.#isDefaultBranch) }}"
 				},
 				_#staticcheck,
 				_#goModTidy,
-				_#checkGitClean,
+				_base.#checkGitClean,
 				_#installUnity,
 				_#runUnity,
 			]
 		}
+	}
+
+	_#goGenerate: json.#step & {
+		name: "Generate"
+		run:  "go generate ./..."
+		// The Go version corresponds to the precise version specified in
+		// the matrix. Skip windows for now until we work out why re-gen is flaky
+		if: "matrix.go-version == '\(_#latestStableGo)' && matrix.os == '\(_#linuxMachine)'"
+	}
+
+	_#goTest: json.#step & {
+		name: "Test"
+		run:  "go test ./..."
+	}
+
+	_#goCheck: json.#step & {
+		// These checks can vary between platforms, as different code can be built
+		// based on GOOS and GOARCH build tags.
+		// However, CUE does not have any such build tags yet, and we don't use
+		// dependencies that vary wildly between platforms.
+		// For now, to save CI resources, just run the checks on one matrix job.
+		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
+		if:   "matrix.go-version == '\(_#latestStableGo)' && matrix.os == '\(_#linuxMachine)'"
+		name: "Check"
+		run:  "go vet ./..."
+	}
+
+	_#goTestRace: json.#step & {
+		name: "Test with -race"
+		run:  "go test -race ./..."
+	}
+
+	_#goModVerify: json.#step & {
+		name: "go mod verify"
+		run:  "go mod verify"
+	}
+
+	_#goModTidy: json.#step & {
+		name: "go mod tidy"
+		run:  "go mod tidy"
+	}
+
+	_#staticcheck: json.#step & {
+		name: "staticcheck"
+		run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.3.2 ./..."
 	}
 }

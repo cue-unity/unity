@@ -14,25 +14,16 @@
 
 package github
 
-daily_check: _base.#bashWorkflow & {
+import (
+	"github.com/SchemaStore/schemastore/src/schemas/json"
+)
 
-	name: "Daily check"
-	on: {
-		schedule: [{cron: "0 9 * * *"}]
-	}
+_#installUnity: json.#step & {
+	name: "Install unity"
+	run:  "./_scripts/installUnity.sh"
+}
 
-	jobs: {
-		test: {
-			strategy:  _#testStrategy
-			"runs-on": "${{ matrix.os }}"
-			steps: [
-				_base.#installGo,
-				_base.#checkoutCode & {
-					with: submodules: true
-				},
-				_#installUnity,
-				_#runUnity,
-			]
-		}
-	}
+_#runUnity: json.#step & {
+	name: "Run unity"
+	run:  "./_scripts/runUnity.sh"
 }

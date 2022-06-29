@@ -14,25 +14,7 @@
 
 package github
 
-daily_check: _base.#bashWorkflow & {
-
-	name: "Daily check"
-	on: {
-		schedule: [{cron: "0 9 * * *"}]
-	}
-
-	jobs: {
-		test: {
-			strategy:  _#testStrategy
-			"runs-on": "${{ matrix.os }}"
-			steps: [
-				_base.#installGo,
-				_base.#checkoutCode & {
-					with: submodules: true
-				},
-				_#installUnity,
-				_#runUnity,
-			]
-		}
-	}
+// The repository_dispatch workflow.
+trybot_dispatch: _base.#bashWorkflow & _gerrithub.#dispatchWorkflow & {
+	#type: _gerrithub.#dispatchTrybot
 }
