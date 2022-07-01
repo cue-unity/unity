@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ci
+package github
 
 import (
 	"github.com/SchemaStore/schemastore/src/schemas/json"
@@ -28,22 +28,22 @@ _#releaseTagPattern: "v*"
 workflows: [...{file: string, schema: (json.#Workflow & {})}]
 workflows: [
 	{
-		file:   "test.yml"
-		schema: test
+		file:   "trybot.yml"
+		schema: trybot
 	},
 	{
 		file:   "daily_check.yml"
-		schema: dailycheck
+		schema: daily_check
 	},
 	{
-		file:   "dispatch.yml"
-		schema: dispatch
+		file:   "unity.yml"
+		schema: unity
 	},
 ]
 
-test: _#bashWorkflow & {
+trybot: _#bashWorkflow & {
 
-	name: "Test"
+	name: "TryBot"
 	on: {
 		push: {
 			branches: ["main"]
@@ -80,7 +80,7 @@ test: _#bashWorkflow & {
 	}
 }
 
-dailycheck: _#bashWorkflow & {
+daily_check: _#bashWorkflow & {
 
 	name: "Daily check"
 	on: {
@@ -101,7 +101,7 @@ dailycheck: _#bashWorkflow & {
 	}
 }
 
-dispatch: _#bashWorkflow & {
+unity: _#bashWorkflow & {
 	// These constants are defined by github.com/cue-sh/tools/cmd/cueckoo
 	_#runtrybot: "runtrybot"
 	_#mirror:    "mirror"
@@ -113,7 +113,7 @@ dispatch: _#bashWorkflow & {
 		if:     "${{ github.event.client_payload.type == '\(_#type)' }}"
 	}
 
-	name: "Repository Dispatch"
+	name: "Unity"
 	on: ["repository_dispatch"]
 
 	jobs: {
