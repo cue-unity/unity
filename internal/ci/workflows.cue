@@ -60,9 +60,9 @@ test: _#bashWorkflow & {
 				_#installGo,
 				_#checkoutCode,
 				_#cacheGoModules,
-				_#setGoBuildTags & {
-					_#tags: "long"
-					if:     "${{ \(_#isMain) }}"
+				_#step & {
+					if:  "${{ \(_#isMain) }}"
+					run: "echo CUE_LONG=true >> $GITHUB_ENV"
 				},
 				_#goModVerify,
 				_#goGenerate,
