@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	// envUpdate is used in the definition of UpdateGoldenFiles
+	envLong = "CUE_LONG"
+
 	envUpdate = "CUE_UPDATE"
 
 	// envNonIssues can be set to a regular expression which indicates what
@@ -34,6 +35,8 @@ const (
 	// tracker conditions (e.g. [golang.org/issues/1234]) to be considered
 	// non-issues.
 	envNonIssues = "CUE_NON_ISSUES"
+
+	envFormatTxtar = "CUE_FORMAT_TXTAR"
 )
 
 var (
@@ -49,11 +52,20 @@ var (
 	}
 )
 
+// Long determines whether long tests should be run.
+// It is controlled by setting CUE_LONG to a non-empty string like "true".
+// Note that it is not the equivalent of not supplying -short.
+var Long = os.Getenv(envLong) != ""
+
 // UpdateGoldenFiles determines whether testscript scripts should update txtar
-// archives in the event of cmp failures. It corresponds to
-// testscript.Params.UpdateGoldenFiles. See the docs for
-// testscript.Params.UpdateGoldenFiles for more details.
+// archives in the event of cmp failures.
+// It is controlled by setting CUE_UPDATE to a non-empty string like "true".
+// It corresponds to testscript.Params.UpdateGoldenFiles; see its docs for details.
 var UpdateGoldenFiles = os.Getenv(envUpdate) != ""
+
+// FormatTxtar ensures that .cue files in txtar test archives are well
+// formatted, updating the archive as required prior to running a test.
+var FormatTxtar = os.Getenv(envFormatTxtar) != ""
 
 // Condition adds support for CUE-specific testscript conditions within
 // testscript scripts. Supported conditions include:
@@ -67,7 +79,6 @@ var UpdateGoldenFiles = os.Getenv(envUpdate) != ""
 // [cuelang.org/issue/N] - evaluates to true unless CUE_NON_ISSUES
 // is set to a regexp that matches the condition, i.e. cuelang.org/issue/N
 // in this case
-//
 func Condition(cond string) (bool, error) {
 	isIssue, nonIssue, err := checkIssueCondition(cond)
 	if err != nil {
@@ -86,6 +97,8 @@ func Condition(cond string) (bool, error) {
 // IssueSkip causes the test t to be skipped unless the issue identified
 // by s is deemed to be a non-issue by CUE_NON_ISSUES.
 func IssueSkip(t *testing.T, s string) {
+	t.Helper()
+
 	isIssue, nonIssue, err := checkIssueCondition(s)
 	if err != nil {
 		t.Fatal(err)
