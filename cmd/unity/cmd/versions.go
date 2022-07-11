@@ -55,6 +55,7 @@ func newVersionResolver(c resolverConfig) (*versionResolver, error) {
 		newGerritRefResolver,
 		newCommitResolver,
 		newGoModResolver,
+		newChangeResolver,
 	}
 	var resolvers []resolver
 	for i, rb := range inits {

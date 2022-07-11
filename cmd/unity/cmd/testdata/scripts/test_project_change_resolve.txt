@@ -1,0 +1,37 @@
+# Verify that we can resolve a CUE version that is a change
+
+[!long] skip 'We clone the actual CUE repo here so this is a long test'
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Test - change corresponds to the same commit as v0.3.0-beta.5.
+# Notice the stderr output corresponds to the ref that is resolved
+# from the revision as the git refs are fetched.
+unity test change:I3a85a9ffb5606a1f7b2369356b5e45c22fd9aec5/ec55f094a1aacdfc3f20e36ea276a4c97f842ca0
+! stdout .+
+stderr 'ok.*mod\.com.*change:I3a85a9ffb5606a1f7b2369356b5e45c22fd9aec5\/ec55f094a1aacdfc3f20e36ea276a4c97f842ca0'
+
+-- .unquote --
+cue.mod/tests/basic.txt
+-- .gitignore --
+/_cue
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+-- cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5
