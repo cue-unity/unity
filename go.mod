@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	cuelang.org/go v0.4.1
+	github.com/andygrunwald/go-gerrit v0.0.0-20220608063906-28cf26f84ecc
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.0.0
@@ -15,6 +16,7 @@ require (
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/emicklei/proto v1.6.15 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
