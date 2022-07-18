@@ -35,8 +35,13 @@ unity_dispatch: _base.#bashWorkflow & {
 				// This workflow is triggered against the tip of the default branch.
 				// We want to create a branch named unity/$changeID/$revisionID
 				// and push that to the trybot repository to trigger the unity
-				// workflow.
-				_base.#checkoutCode,
+				// workflow. We need full history in order to be able to push
+				// to the unity-trybot repository.
+				_base.#checkoutCode & {
+					with: {
+						"fetch-depth": 0
+					}
+				},
 				json.#step & {
 					name: "Trigger \(_#type)"
 					run:  """
