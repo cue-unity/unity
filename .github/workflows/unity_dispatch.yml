@@ -18,5 +18,5 @@ jobs:
           git config user.name porcuepine
           git config user.email porcuepine@gmail.com
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n porcuepine:${{ secrets.PORCUEPINE_GITHUB_PAT }} | base64)"
-          git checkout -b unity/${{ github.event.client_payload.payload.changeID }}/${{ github.event.client_payload.payload.commit }}
-          git push https://github.com/cue-unity/unity-trybot unity/${{ github.event.client_payload.payload.changeID }}/${{ github.event.client_payload.payload.commit }}
+          git checkout -b unity/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}
+          git push https://github.com/cue-unity/unity-trybot unity/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}

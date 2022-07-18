@@ -24,7 +24,7 @@ import (
 // is concerned, compared to unity_cli.
 unity_dispatch: _base.#bashWorkflow & {
 	_#type:                 _gerrithub.#dispatchUnity
-	_#branchNameExpression: "\(_#type)/${{ github.event.client_payload.payload.changeID }}/${{ github.event.client_payload.payload.commit }}"
+	_#branchNameExpression: "\(_#type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}"
 	name:                   "Dispatch \(_#type)"
 	on: ["repository_dispatch"]
 	jobs: {
