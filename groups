@@ -1,3 +1,12 @@
 # UUID         	Group Name
 #
 user:porcuepine	user/porcuepine
+b03e9bbbfd4116bd6da31ce33faf779e68ec0f53	cue.works Admins
+38c107d469cbf87db0cd2925c1e2934ebab7be94	cue.works Approvers
+dc1863daf24c8c0d68ebe04d1af624771833e0aa	cue.works trybot
+9550ee0eb7d04a76833c1c2471e3e0b819442809	cue.works Super Admins
+global:Anonymous-Users				Anonymous Users
+global:Change-Owner				Change Owner
+global:Project-Owners				Project Owners
+global:Registered-Users				Registered Users
+
