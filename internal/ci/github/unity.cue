@@ -32,8 +32,9 @@ unity: _base.#bashWorkflow & {
 
 	jobs: {
 		test: {
-			strategy:  _#testStrategy
-			"runs-on": "${{ matrix.os }}"
+			strategy:          _#testStrategy
+			"timeout-minutes": 15
+			"runs-on":         "${{ matrix.os }}"
 			steps: [
 				_base.#installGo,
 				_base.#checkoutCode & {
