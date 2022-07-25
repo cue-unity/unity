@@ -130,16 +130,20 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	// the base versions, but do the supplied version. Otherwise, updating is
 	// not permitted.
 
-	// First check the base versions
-	verify(len(versions) == 0, func(m *module) []string { return m.manifest.Versions })
 	sawError := false
-	for _, tr := range tested {
-		if tr.err != nil {
-			sawError = true
+
+	if !mt.skipBase {
+		// First check the base versions
+		verify(len(versions) == 0, func(m *module) []string { return m.manifest.Versions })
+		for _, tr := range tested {
+			if tr.err != nil {
+				sawError = true
+			}
 		}
 	}
+
 	// Only run the additional versions if the base version passed with
-	// no failures
+	// no failures.
 	if !sawError && len(versions) > 0 {
 		verify(len(versions) == 1, func(*module) []string { return versions })
 	}
@@ -256,6 +260,9 @@ type moduleTester struct {
 	// working is the temporary directory that moduleTester uses for temporary
 	// files. Call cleanup to remove this and anything contained within it
 	working string
+
+	// skipBase indicates we should skip testing base versions for a project
+	skipBase bool
 }
 
 func newModuleTester(mt moduleTester) (*moduleTester, error) {

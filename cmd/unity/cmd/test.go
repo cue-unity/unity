@@ -46,6 +46,7 @@ const (
 	flagTestStaged      flagName = "staged"
 	flagTestIgnoreDirty flagName = "ignore-dirty"
 	flagTestSelf        flagName = "self"
+	flagTestSkipBase    flagName = "skip-base"
 
 	// dockerImage is the image we use when running in safe mode
 	//
@@ -77,6 +78,7 @@ Need to document this command
 	cmd.Flags().Bool(string(flagTestStaged), false, "apply staged changes during tests")
 	cmd.Flags().Bool(string(flagTestIgnoreDirty), false, "ignore untracked files, and staged files unless --staged")
 	cmd.Flags().String(string(flagTestSelf), os.Getenv("UNITY_SELF"), "the context within which we can resolve self to build for docker")
+	cmd.Flags().Bool(string(flagTestSkipBase), false, "do not test base versions")
 
 	return cmd
 }
@@ -175,6 +177,11 @@ func testDef(c *Command, args []string) error {
 		return fmt.Errorf("cannot supply --update and multiple versions")
 	}
 
+	// Perform some basic validation on the --skip-base flag.
+	if len(args) == 0 && flagTestSkipBase.Bool(c) {
+		return fmt.Errorf("nothing to test")
+	}
+
 	mt, err := newModuleTester(moduleTester{
 		self:            self, // only used in safe mode
 		buildHelper:     bh,
@@ -189,6 +196,7 @@ func testDef(c *Command, args []string) error {
 		staged:          flagTestStaged.Bool(c),
 		ignoreDirty:     flagTestIgnoreDirty.Bool(c),
 		verbose:         flagTestVerbose.Bool(c),
+		skipBase:        flagTestSkipBase.Bool(c),
 	})
 	defer mt.cleanup()
 
