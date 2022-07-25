@@ -1,0 +1,45 @@
+# Test --skip-base
+
+# Initial setup
+git init
+git add -A
+git commit -m 'Initial commit'
+
+# Verify that we can't pass --skip-base when not supplying
+# versions to test
+! unity test --skip-base
+stderr 'nothing to test'
+
+# Verify that when we pass --skip-base and versions that we
+# only verify the versions, and not the base. It's fine that
+# we test PATH here
+unity test --skip-base PATH
+! stdout .+
+
+-- .unquote --
+cue.mod/tests/basic1.txt
+-- go.mod --
+module blah
+
+go 1.16
+
+require cuelang.org/go v0.3.0-beta.5
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["go.mod"]
+
+-- x.cue --
+package x
+
+x: 5
+-- cue.mod/tests/basic1.txt --
+>env
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
