@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cebe283a_b2d6bf0b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-07-26T05:30:11Z",
+      "side": 1,
+      "message": "Previously agreed this new baseline is good offline.",
+      "revId": "def9a2e86430f7ac9b2870ed169b490bb7cb4d6b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
