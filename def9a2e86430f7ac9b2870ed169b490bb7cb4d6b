@@ -16,6 +16,23 @@
       "message": "Previously agreed this new baseline is good offline.",
       "revId": "def9a2e86430f7ac9b2870ed169b490bb7cb4d6b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf291eb0_c9c1057f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1020341
+      },
+      "writtenOn": "2022-07-26T05:37:18Z",
+      "side": 1,
+      "message": "Manually marking trybots as having succeeded.",
+      "revId": "def9a2e86430f7ac9b2870ed169b490bb7cb4d6b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
