@@ -52,7 +52,7 @@ func TestScripts(t *testing.T) {
 		t.Fatal(err)
 	}
 	// This will build self (i.e. unity) into $modroot/.bin
-	selfPath, err := bh.pathToSelf(cwd, "", true)
+	selfPath, err := bh.pathToSelf(cwd, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,6 +110,7 @@ func TestScripts(t *testing.T) {
 
 					// Augment the environment
 					e.Vars = append(e.Vars,
+						"UNITY_TESTSCRIPT=true",
 						"GOCACHE="+env.GOCACHE,
 						"GOMODCACHE="+env.GOMODCACHE,
 						"PATH="+path,
@@ -125,7 +126,6 @@ func TestScripts(t *testing.T) {
 
 					// Always run git config steps
 					h.git("config", "--global", "user.name", "unity")
-					h.git("config", "--global", "user.email", "unity@cuelang.org")
 					h.git("config", "--global", "user.email", "unity@cuelang.org")
 					h.write(filepath.Join(home, ".gitignore"), strings.Join([]string{
 						homeDirName,

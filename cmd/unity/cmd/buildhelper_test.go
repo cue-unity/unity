@@ -72,7 +72,7 @@ func TestBuildInfoBuild(t *testing.T) {
 	if err := bh.writeGoModSum(td, "example.com/blah", mods); err != nil {
 		t.Fatal(err)
 	}
-	// get := exec.Command("go", "get", "-d", "example.com/blah")
+	// get := exec.Command("go", "get", "example.com/blah")
 	// get.Dir = td
 	// if out, err := get.CombinedOutput(); err != nil {
 	// 	t.Fatal(fmt.Errorf("failed to run %v: %v\n%s", get, err, out))
