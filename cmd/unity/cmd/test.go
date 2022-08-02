@@ -155,7 +155,7 @@ func testDef(c *Command, args []string) error {
 			return fmt.Errorf("failed to create a temp directory for self build: %v", err)
 		}
 		defer os.RemoveAll(td)
-		self, err = bh.pathToSelf(selfDir, td, false)
+		self, err = bh.pathToSelf(selfDir, td)
 		if err != nil {
 			return fmt.Errorf("failed to derive path to self: %v", err)
 		}

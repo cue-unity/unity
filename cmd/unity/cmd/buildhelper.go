@@ -72,6 +72,8 @@ func newBuildHelper() (*buildHelper, error) {
 	res := &buildHelper{
 		userCacheDir: ucd,
 		cache:        vcache,
+		// TODO: Right now we assume a Linux or Unix-like target
+		// container. We might want to similarly force GOOS=linux.
 		targetGOOS:   runtime.GOOS,
 		targetGOARCH: runtime.GOARCH,
 	}
@@ -134,26 +136,20 @@ func (bh *buildHelper) targetDocker(dockerImage string) error {
 // pathToSelf returns the directory within which a compiled version of self
 // called "unity" appropriate for running within a docker container exists.
 // temp indicates to the caller whether that is in a temporary location that
-// must be purged after use. dir is the context within which we are running
-// and can find self
-func (bh *buildHelper) pathToSelf(selfDir, tempDir string, testing bool) (self string, err error) {
-	if !testing && bh.targetGOOS == runtime.GOOS && bh.targetGOARCH == runtime.GOARCH {
-		// "self" is sufficient
+// must be purged after use. selfDir is the context within which we are running
+// and can find self.
+func (bh *buildHelper) pathToSelf(selfDir, tempDir string) (self string, err error) {
+	// If we are running as part of a test script,
+	// we already built unity via pathToSelf in the parent test func.
+	if os.Getenv("UNITY_TESTSCRIPT") == "true" {
 		self, err := os.Executable()
 		if err != nil {
 			return "", fmt.Errorf("failed to derive path to self: %v", err)
 		}
 		return self, nil
 	}
-
 	// At this point we know that we need to build a version of "self" appropriate
 	// for the target docker image. Use the debug.BuildInfo to work out what to do.
-
-	// compileTargetDir indicates where we should ensure self is built
-	var compileTargetDir string
-
-	// buildDir is the context within which we will build self
-	var buildDir string
 
 	bi, ok := debug.ReadBuildInfo()
 
@@ -180,15 +176,14 @@ func (bh *buildHelper) pathToSelf(selfDir, tempDir string, testing bool) (self s
 		if err := json.Unmarshal(listOut, &listInfo); err != nil {
 			return "", fmt.Errorf("failed to decode list output: %v\n%s", err, listOut)
 		}
+		var target string
 		if listInfo.Version != "" {
 			// We are in the module cache
-			compileTargetDir = tempDir
+			target = filepath.Join(tempDir, mainName)
 		} else {
-			compileTargetDir = filepath.Join(listInfo.Dir, ".bin")
+			target = filepath.Join(listInfo.Dir, ".bin", mainName)
 		}
-		target := filepath.Join(compileTargetDir, mainName)
 		build := exec.Command("go", "build", "-o", target, mainSelf)
-		build.Dir = buildDir
 		build.Env = append(os.Environ(), bh.buildEnv()...)
 		buildOut, err := build.CombinedOutput()
 		if err != nil {
@@ -200,9 +195,6 @@ func (bh *buildHelper) pathToSelf(selfDir, tempDir string, testing bool) (self s
 	if err := bh.writeGoModSum(tempDir, mainSelf, modules); err != nil {
 		return "", fmt.Errorf("failed to build temp go.{mod,sum} in %s: %v", tempDir, err)
 	}
-
-	buildDir = tempDir
-	compileTargetDir = tempDir
 
 	target := filepath.Join(tempDir, mainName)
 	if err := bh.buildAndCache(tempDir, target, mainSelf); err != nil {
@@ -219,7 +211,6 @@ func buildInfoToModules(bi *debug.BuildInfo, ok bool) (modules []*debug.Module, 
 	if !ok {
 		return nil, false
 	}
-	modulesAreValid = true
 	modules = append(modules, &bi.Main)
 	modules = append(modules, bi.Deps...)
 	for _, m := range modules {
@@ -228,10 +219,10 @@ func buildInfoToModules(bi *debug.BuildInfo, ok bool) (modules []*debug.Module, 
 			v = m.Replace.Version
 		}
 		if !semver.IsValid(v) {
-			modulesAreValid = false
+			return modules, false // we can stop early
 		}
 	}
-	return
+	return modules, true
 }
 
 func (bh *buildHelper) writeGoModSum(tempDir, mainPkg string, modules []*debug.Module) (err error) {
