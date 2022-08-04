@@ -6,12 +6,12 @@
 # is PATH
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-! unity test v0.3.0-beta.6
+! exec unity test v0.3.0-beta.6
 stderr '\QFAIL: basic/PATH\E'
 stderr 'FAIL: .*\Q/basic.txt:2: stdout and $WORK/eval.golden differ\E'
 

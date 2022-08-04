@@ -2,12 +2,12 @@
 # where there are multiple CUE modules within the repo
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test
+exec unity test
 ! stdout .+
 
 -- .unquote --

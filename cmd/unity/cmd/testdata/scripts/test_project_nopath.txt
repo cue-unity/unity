@@ -2,12 +2,12 @@
 # encounters a version specification of PATH when --nopath is specified
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-! unity test --nopath
+! exec unity test --nopath
 stderr 'CUE version of PATH not permitted'
 
 -- .unquote --

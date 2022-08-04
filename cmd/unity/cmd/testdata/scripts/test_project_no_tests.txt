@@ -2,12 +2,12 @@
 # in a module that has no tests
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-! unity test
+! exec unity test
 stderr 'no scripts found matching glob: .*\Q/*.txt\E'
 
 -- cue.mod/module.cue --

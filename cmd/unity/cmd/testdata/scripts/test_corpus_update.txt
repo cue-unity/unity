@@ -2,22 +2,22 @@
 
 # Setup a
 cd a
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 cd $WORK
 
 # Setup corpus
 cd corpus
-git init
-git submodule add $WORK/a a
-git add -A
-git commit -am 'Initial commit'
+exec git init
+exec git submodule add $WORK/a a
+exec git add -A
+exec git commit -am 'Initial commit'
 cd $WORK
 
 # Test
 cd corpus
-unity test --corpus --update
+exec unity test --corpus --update
 ! stdout .+
 cmp a/cue.mod/tests/basic.txt a/cue.mod/tests/basic.txt.golden
 

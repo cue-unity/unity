@@ -1,12 +1,12 @@
 # Verify the --update works when using an overlay
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test --overlay overlay --update
+exec unity test --overlay overlay --update
 ! stdout .+
 cmp overlay/basic.txt overlay/basic.txt.golden
 

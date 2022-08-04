@@ -1,19 +1,19 @@
 # Test --skip-base
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Verify that we can't pass --skip-base when not supplying
 # versions to test
-! unity test --skip-base
+! exec unity test --skip-base
 stderr 'nothing to test'
 
 # Verify that when we pass --skip-base and versions that we
 # only verify the versions, and not the base. It's fine that
 # we test PATH here
-unity test --skip-base PATH
+exec unity test --skip-base PATH
 ! stdout .+
 
 -- .unquote --

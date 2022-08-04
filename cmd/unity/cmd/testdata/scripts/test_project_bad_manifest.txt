@@ -1,12 +1,12 @@
 # Verify we get a sensible error message when the tests manifest is bad
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-! unity test
+! exec unity test
 stderr 'failed to validate tests manifest: #Manifest: field not allowed: versions'
 
 -- cue.mod/module.cue --

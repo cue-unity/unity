@@ -2,12 +2,12 @@
 # artefact
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test v0.3.0-beta.4
+exec unity test v0.3.0-beta.4
 
 -- cue.mod/module.cue --
 module: "mod.com"

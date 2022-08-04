@@ -1,12 +1,12 @@
 # Verify that passing --update works with a simple project
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test --update
+exec unity test --update
 ! stdout .+
 cmp cue.mod/tests/basic.txt cue.mod/tests/basic.txt.golden
 

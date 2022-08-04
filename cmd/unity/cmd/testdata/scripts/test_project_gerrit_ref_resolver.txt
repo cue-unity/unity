@@ -3,12 +3,12 @@
 [!long] skip 'We clone the actual CUE repo here so this is a long test'
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test - ref corresponds to the same commit as v0.3.0-beta.5
-unity test refs/changes/69/520169/1
+exec unity test refs/changes/69/520169/1
 ! stdout .+
 stderr 'ok.*mod\.com.*refs/changes/69/520169/1'
 

@@ -2,12 +2,12 @@
 # with a module name/path
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-! unity test
+! exec unity test
 cmpenv stderr stderr.golden
 
 -- .unquote --
