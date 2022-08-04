@@ -94,7 +94,7 @@ func newRootCmd() *Command {
 
 	c := &Command{Command: cmd, root: cmd}
 
-	cmd.PersistentFlags().Bool(string(flagDebug), os.Getenv("UNITY_DEBUG") != "", "debug output")
+	cmd.PersistentFlags().Bool(string(flagDebug), os.Getenv("UNITY_DEBUG") == "true", "debug output")
 
 	subCommands := []*cobra.Command{
 		newTestCmd(c),

@@ -74,7 +74,7 @@ Need to document this command
 	cmd.Flags().BoolP(string(flagTestVerbose), "v", false, "verbose output; log all script runs")
 	cmd.Flags().Bool(string(flagTestNoPath), false, "do not allow CUE version PATH. Useful for CI")
 	cmd.Flags().String(string(flagTestOverlay), "", "the directory from which to source overlays")
-	cmd.Flags().Bool(string(flagTestUnsafe), os.Getenv("UNITY_UNSAFE") != "", "do not use Docker for executing scripts")
+	cmd.Flags().Bool(string(flagTestUnsafe), os.Getenv("UNITY_UNSAFE") == "true", "do not use Docker for executing scripts")
 	cmd.Flags().Bool(string(flagTestStaged), false, "apply staged changes during tests")
 	cmd.Flags().Bool(string(flagTestIgnoreDirty), false, "ignore untracked files, and staged files unless --staged")
 	cmd.Flags().String(string(flagTestSelf), os.Getenv("UNITY_SELF"), "the context within which we can resolve self to build for docker")
