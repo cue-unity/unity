@@ -57,18 +57,9 @@ func TestBuildInfoBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer srv.Close()
-	pushEnv := func(k, v string) func() {
-		curr := os.Getenv(k)
-		if err := os.Setenv(k, v); err != nil {
-			t.Fatal(err)
-		}
-		return func() {
-			os.Setenv(k, curr)
-		}
-	}
-	defer pushEnv("GOPROXY", srv.URL)()
-	defer pushEnv("GONOSUMDB", "*")()
+	t.Cleanup(srv.Close)
+	t.Setenv("GOPROXY", srv.URL)
+	t.Setenv("GONOSUMDB", "*")
 	if err := bh.writeGoModSum(td, "example.com/blah", mods); err != nil {
 		t.Fatal(err)
 	}

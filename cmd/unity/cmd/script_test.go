@@ -30,11 +30,6 @@ import (
 	"github.com/rogpeppe/go-internal/txtar"
 )
 
-const (
-	homeDirName = ".user-home"
-	tmpDirName  = ".tmp-dir"
-)
-
 // TestScripts runs testscript txtar tests that test unity
 func TestScripts(t *testing.T) {
 	cwd, err := os.Getwd()
@@ -47,7 +42,7 @@ func TestScripts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer bh.cache.Trim()
+	t.Cleanup(bh.cache.Trim)
 	if err := bh.targetDocker(dockerImage); err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +59,7 @@ func TestScripts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var env struct {
+	var goEnv struct {
 		GOCACHE    string
 		GOMODCACHE string
 	}
@@ -73,69 +68,46 @@ func TestScripts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := json.Unmarshal(out, &env); err != nil {
+	if err := json.Unmarshal(out, &goEnv); err != nil {
 		t.Fatal(err)
 	}
 
-	for _, v := range []string{"safe", "unsafe"} {
-		v := v
-		t.Run(v, func(t *testing.T) {
+	for _, unityUnsafe := range []bool{false, true} {
+		unityUnsafe := unityUnsafe
+		t.Run(fmt.Sprintf("unsafe=%t", unityUnsafe), func(t *testing.T) {
+			t.Parallel()
 			testscript.Run(t, testscript.Params{
 				Dir: filepath.Join("testdata", "scripts"),
-				Setup: func(e *testscript.Env) (err error) {
+				Setup: func(env *testscript.Env) (err error) {
 					defer helperDefer(&err)
-					h := &helper{env: e}
+					h := &helper{env: env}
 
 					// Augment the environment with a HOME setup
-					home := filepath.Join(e.WorkDir, homeDirName)
+					const homeDirName = ".user-home"
+					home := filepath.Join(env.WorkDir, homeDirName)
 					if err := os.Mkdir(home, 0777); err != nil {
 						return err
 					}
 
-					tmp := filepath.Join(e.WorkDir, tmpDirName)
-					if err := os.Mkdir(tmp, 0777); err != nil {
-						return err
-					}
-
-					// Add GOBIN (set above) to PATH
-					var path string
-					for i := len(e.Vars) - 1; i >= 0; i-- {
-						v := e.Vars[i]
-						if strings.HasPrefix(v, "PATH=") {
-							path = strings.TrimPrefix(v, "PATH=")
-							break
-						}
-					}
-					path = selfDir + string(os.PathListSeparator) + path
-
 					// Augment the environment
-					e.Vars = append(e.Vars,
-						"UNITY_TESTSCRIPT=true",
-						"GOCACHE="+env.GOCACHE,
-						"GOMODCACHE="+env.GOMODCACHE,
-						"PATH="+path,
-						homeEnvName()+"="+home,
-						tempEnvName()+"="+tmp,
-						"UNITY_SEMVER_URL_TEMPLATE=file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"),
-					)
-					if v == "unsafe" {
-						e.Vars = append(e.Vars,
-							"UNITY_UNSAFE=true",
-						)
-					}
+					env.Setenv("GOCACHE", goEnv.GOCACHE)
+					env.Setenv("GOMODCACHE", goEnv.GOMODCACHE)
+					env.Setenv("PATH", selfDir+string(os.PathListSeparator)+env.Getenv("PATH"))
+					env.Setenv(homeEnvName(), home)
+					env.Setenv("UNITY_SEMVER_URL_TEMPLATE", "file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"))
+					env.Setenv("UNITY_UNSAFE", fmt.Sprintf("%t", unityUnsafe))
+					env.Setenv("UNITY_TESTSCRIPT", "true")
 
 					// Always run git config steps
 					h.git("config", "--global", "user.name", "unity")
 					h.git("config", "--global", "user.email", "unity@cuelang.org")
-					h.write(filepath.Join(home, ".gitignore"), strings.Join([]string{
-						homeDirName,
-						tmpDirName,
-					}, "\n"))
-					h.git("config", "--global", "core.excludesfile", filepath.Join(home, ".gitignore"))
+					gitignore := filepath.Join(home, "gitignore")
+					h.write(gitignore, homeDirName+"\n")
+					h.git("config", "--global", "core.excludesfile", gitignore)
 					h.git("config", "--global", "init.defaultBranch", "main")
 
 					// Pre-script setup via special files
-					if err := processSpecialFiles(e); err != nil {
+					if err := processSpecialFiles(env); err != nil {
 						return err
 					}
 					return nil
@@ -150,9 +122,9 @@ const specialUnquote = ".unquote"
 
 // processSpecialFiles performs pre-script setup using the existence of
 // special files to drive what should be done
-func processSpecialFiles(e *testscript.Env) (err error) {
+func processSpecialFiles(env *testscript.Env) (err error) {
 	defer helperDefer(&err)
-	h := &helper{env: e}
+	h := &helper{env: env}
 	// Do unquoting first
 	h.walk(specialUnquote, func(path string) {
 		files := h.speciallines(h.read(path))
@@ -249,16 +221,5 @@ func homeEnvName() string {
 		return "home"
 	default:
 		return "HOME"
-	}
-}
-
-func tempEnvName() string {
-	switch runtime.GOOS {
-	case "windows":
-		return "TMP"
-	case "plan9":
-		return "TMPDIR" // actually plan 9 doesn't have one at all but this is fine
-	default:
-		return "TMPDIR"
 	}
 }

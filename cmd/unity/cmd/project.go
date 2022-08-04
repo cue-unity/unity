@@ -589,16 +589,16 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 		UpdateScripts: info.update,
 		Dir:           info.manifestDir,
 		WorkdirRoot:   info.workdirRoot,
-		Setup: func(e *testscript.Env) error {
+		Setup: func(env *testscript.Env) error {
 			// Limit concurrency across all testscript runs
 			// e.Defer(m.tester.limit())
 
 			// Ensure that cue is on the PATH
-			newPath := filepath.Dir(info.cuePath) + string(os.PathListSeparator) + e.Getenv("PATH")
-			e.Setenv("PATH", newPath)
+			newPath := filepath.Dir(info.cuePath) + string(os.PathListSeparator) + env.Getenv("PATH")
+			env.Setenv("PATH", newPath)
 
 			// Set the working directory to be module
-			e.Cd = filepath.Join(e.WorkDir, repoDir, info.relPath)
+			env.Cd = filepath.Join(env.WorkDir, repoDir, info.relPath)
 			return nil
 		},
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
