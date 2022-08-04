@@ -6,12 +6,12 @@
 exec git clone --depth=1 --branch v0.3.0-beta.5 https://review.gerrithub.io/cue-lang/cue $WORK/_cue
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test $WORK/_cue
+exec unity test $WORK/_cue
 ! stdout .+
 stderr 'ok.*mod\.com.*bcd752ada5ab3e5814f7b95e5f82af61b5f4cf3e'
 

@@ -3,13 +3,13 @@
 
 # Initial setup
 cd cue.mod
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 cd $WORK
 
 # Test
-! unity test
+! exec unity test
 stderr 'failed to determine git root'
 
 -- cue.mod/module.cue --

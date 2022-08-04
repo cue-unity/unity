@@ -140,36 +140,13 @@ func TestScripts(t *testing.T) {
 					}
 					return nil
 				},
-				Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-					"cue":   runCmd("cue"),
-					"git":   runCmd("git"),
-					"unity": runCmd("unity"),
-				},
 				Condition: cuetest.Condition,
 			})
 		})
 	}
 }
 
-func runCmd(cmd string) func(ts *testscript.TestScript, neg bool, args []string) {
-	return func(ts *testscript.TestScript, neg bool, args []string) {
-		err := ts.Exec(cmd, args...)
-		if err != nil {
-			ts.Logf("[%v]\n", err)
-			if !neg {
-				ts.Fatalf("unexpected %s command failure", cmd)
-			}
-		} else {
-			if neg {
-				ts.Fatalf("unexpected %s command success", cmd)
-			}
-		}
-	}
-}
-
-const (
-	specialUnquote = ".unquote"
-)
+const specialUnquote = ".unquote"
 
 // processSpecialFiles performs pre-script setup using the existence of
 // special files to drive what should be done

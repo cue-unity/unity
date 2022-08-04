@@ -3,12 +3,12 @@
 # context, but where the tests manifest is missing
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-! unity test
+! exec unity test
 stderr 'failed to load tests manifest'
 
 -- cue.mod/module.cue --

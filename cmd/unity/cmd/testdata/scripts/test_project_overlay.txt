@@ -2,12 +2,12 @@
 # using an overlay for the manifest for that project
 
 # Initial setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test --overlay overlay
+exec unity test --overlay overlay
 ! stdout .+
 
 -- .unquote --

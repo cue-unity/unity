@@ -6,30 +6,30 @@
 
 # Setup a
 cd a
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 cd $WORK
 
 # Setup b
 cd b
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 cd $WORK
 
 # Setup corpus
 cd corpus
-git init
-git submodule add $WORK/a a
-git submodule add $WORK/b b
-git add -A
-git commit -am 'Initial commit'
+exec git init
+exec git submodule add $WORK/a a
+exec git submodule add $WORK/b b
+exec git add -A
+exec git commit -am 'Initial commit'
 cd $WORK
 
 # Test
 cd corpus
-unity test --corpus --overlay $WORK/overlay
+exec unity test --corpus --overlay $WORK/overlay
 
 -- corpus/README.md --
 -- a/.unquote --

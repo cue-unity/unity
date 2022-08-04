@@ -3,11 +3,11 @@
 # cannot be determined
 
 # Setup
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
-! unity test
+! exec unity test
 stderr 'could not find any CUE module roots'
 
 -- README.md --

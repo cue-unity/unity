@@ -4,12 +4,12 @@
 
 # Initial setup
 exec go mod tidy
-git init
-git add -A
-git commit -m 'Initial commit'
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
 
 # Test
-unity test go.mod
+exec unity test go.mod
 ! stdout .+
 stderr 'ok.*mod\.com.*go\.mod.*\(v0\.3\.0-beta\.5\)'
 
