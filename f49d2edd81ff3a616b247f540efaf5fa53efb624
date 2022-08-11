@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97f95bd9_9708ccd3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-08-11T16:29:32Z",
+      "side": 1,
+      "message": "Thanks - the more I see this change in action, the more I agree with the motivation and thinking in https://github.com/rogpeppe/go-internal/issues/163.",
+      "revId": "f49d2edd81ff3a616b247f540efaf5fa53efb624",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
