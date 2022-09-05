@@ -587,8 +587,9 @@ type runModuleInfo struct {
 func runModule(log io.Writer, info runModuleInfo) (err error) {
 	params := testscript.Params{
 		UpdateScripts: info.update,
-		Dir:           info.manifestDir,
-		WorkdirRoot:   info.workdirRoot,
+		// TODO(mvdan): Consider using RequireExplicitExec in the future.
+		Dir:         info.manifestDir,
+		WorkdirRoot: info.workdirRoot,
 		Setup: func(env *testscript.Env) error {
 			// Limit concurrency across all testscript runs
 			// e.Defer(m.tester.limit())
@@ -601,6 +602,8 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 			env.Cd = filepath.Join(env.WorkDir, repoDir, info.relPath)
 			return nil
 		},
+		// TODO(mvdan): We should transition to `exec cue`, which has multiple
+		// advantages over a plain command.
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
 			"cue": buildCmdCUE(info.cuePath),
 		},

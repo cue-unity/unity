@@ -46,7 +46,8 @@ func TestScripts(t *testing.T) {
 	if err := bh.targetDocker(dockerImage); err != nil {
 		t.Fatal(err)
 	}
-	// This will build self (i.e. unity) into $modroot/.bin
+	// This will build self (i.e. unity) into $modroot/.bin.
+	// Note that we don't install the tool via testscript.RunMain.
 	selfPath, err := bh.pathToSelf(cwd, "")
 	if err != nil {
 		t.Fatal(err)
@@ -112,7 +113,8 @@ func TestScripts(t *testing.T) {
 					}
 					return nil
 				},
-				Condition: cuetest.Condition,
+				Condition:           cuetest.Condition,
+				RequireExplicitExec: true,
 			})
 		})
 	}

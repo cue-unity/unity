@@ -6,7 +6,7 @@ require (
 	cuelang.org/go v0.4.1
 	github.com/andygrunwald/go-gerrit v0.0.0-20220608063906-28cf26f84ecc
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/rogpeppe/go-internal v1.8.1
+	github.com/rogpeppe/go-internal v1.9.0
 	github.com/spf13/cobra v1.0.0
 	golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449
 	golang.org/x/text v0.3.3
@@ -29,6 +29,5 @@ require (
 	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	golang.org/x/tools v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	gopkg.in/errgo.v2 v2.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
