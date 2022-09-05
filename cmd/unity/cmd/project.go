@@ -361,9 +361,13 @@ func (mt *moduleTester) newInstance(gitRoot, dir string) (*module, error) {
 
 	// Pre-validate that none of the testscript files we are going to validate
 	// have a module/ path in their archive
-	scripts, err := filepath.Glob(filepath.Join(manifestDir, "*.txt"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to glob for input scripts: %v", err)
+	var scripts []string
+	for _, glob := range []string{"*.txtar", "*.txt"} {
+		matches, err := filepath.Glob(filepath.Join(manifestDir, glob))
+		if err != nil {
+			return nil, fmt.Errorf("failed to glob for input scripts: %v", err)
+		}
+		scripts = append(scripts, matches...)
 	}
 	for _, s := range scripts {
 		archive, err := txtar.ParseFile(s)
@@ -522,7 +526,9 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	}
 	for _, s := range m.scripts {
 		// uses the pattern of directory construction from testscript
-		name := strings.TrimSuffix(filepath.Base(s), ".txt")
+		name := filepath.Base(s)
+		name = strings.TrimSuffix(name, ".txtar")
+		name = strings.TrimSuffix(name, ".txt")
 		dir := filepath.Join(td, "script-"+name, repoDir)
 		if err := os.MkdirAll(dir, 0777); err != nil {
 			return fmt.Errorf("failed to create workdir for %s: %v", s, err)
