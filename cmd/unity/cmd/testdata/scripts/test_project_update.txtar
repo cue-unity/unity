@@ -1,5 +1,8 @@
 # Verify that passing --update works with a simple project
 
+# Test with both the txt and txtar extensions
+cp cue.mod/tests/basic.txt cue.mod/tests/basic2.txtar
+
 # Initial setup
 exec git init
 exec git add -A
@@ -9,6 +12,7 @@ exec git commit -m 'Initial commit'
 exec unity test --update
 ! stdout .+
 cmp cue.mod/tests/basic.txt cue.mod/tests/basic.txt.golden
+cmp cue.mod/tests/basic2.txtar cue.mod/tests/basic.txt.golden
 
 -- .unquote --
 cue.mod/tests/basic.txt
