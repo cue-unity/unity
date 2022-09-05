@@ -8,7 +8,7 @@ exec git commit -m 'Initial commit'
 
 # Test
 ! exec unity test
-stderr 'no scripts found matching glob: .*\Q/*.txt\E'
+stderr 'no txtar nor txt scripts found'
 
 -- cue.mod/module.cue --
 module: "mod.com"
