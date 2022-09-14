@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97479227_5af632c7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-14T08:49:56Z",
+      "side": 1,
+      "message": "This is the result of running --update against c89ab8b4534144edd9e4313666a7967cb40270d5. This establishes a new baseline post CL 543404. The diffs here were \"signed off\" in that CL.",
+      "revId": "f14d078fa37a3532997d0535e417124fdb586a74",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
