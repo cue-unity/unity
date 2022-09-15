@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dfb6f7d_d1a7cd4f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-15T14:58:19Z",
+      "side": 1,
+      "message": "The diffs here were signed off in https://review.gerrithub.io/c/cue-lang/cue/+/543362",
+      "revId": "c6025a6a8376c02cd75535214448c1d1d27617db",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
