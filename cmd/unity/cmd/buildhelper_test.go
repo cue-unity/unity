@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -39,11 +38,7 @@ func TestBuildInfoBuild(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected modules to be ok")
 	}
-	td, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 	bh, err := newBuildHelper()
 	if err != nil {
 		t.Fatal(err)

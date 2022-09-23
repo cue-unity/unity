@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -251,7 +250,7 @@ func (bh *buildHelper) writeGoModSum(tempDir, mainPkg string, modules []*debug.M
 	}
 	writeFile := func(path string, contents string) {
 		path = filepath.Join(tempDir, path)
-		if err := ioutil.WriteFile(path, []byte(contents), 0666); err != nil {
+		if err := os.WriteFile(path, []byte(contents), 0666); err != nil {
 			panic(cmdError{fmt.Errorf("failed to write %s: %v", path, err)})
 		}
 

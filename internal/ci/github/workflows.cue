@@ -25,6 +25,10 @@ import (
 workflows: [...{file: string, schema: (json.#Workflow & {})}]
 workflows: [
 	{
+		// Note: the name of the file corresponds to the environment variable
+		// names for gerritstatusupdater. Therefore, this filename must only be
+		// change in combination with also updating the environment in which
+		// gerritstatusupdater is running for this repository.
 		file:   "trybot.yml"
 		schema: trybot
 	},
@@ -58,11 +62,16 @@ _#releaseTagPattern: "v*"
 
 // Use the latest Go version for extra checks,
 // such as running tests with the data race detector.
-_#latestStableGo: "1.18.x"
+_#latestStableGo: "1.19.x"
 
 _#linuxMachine:   "ubuntu-20.04"
 _#macosMachine:   "macos-11"
 _#windowsMachine: "windows-2022"
+
+// #_isLatestLinux evaluates to true if the job is running on Linux with the
+// latest version of Go. This expression is often used to run certain steps
+// just once per CI workflow, to avoid duplicated work.
+#_isLatestLinux: "matrix.go-version == '\(_#latestStableGo)' && matrix.os == '\(_#linuxMachine)'"
 
 _#testStrategy: {
 	"fail-fast": false

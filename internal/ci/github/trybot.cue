@@ -18,13 +18,18 @@ import (
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
-// The TryBot workflow.
+// The trybot workflow.
 trybot: _base.#bashWorkflow & {
+	// Note: the name of this workflow is used by gerritstatusupdater as an
+	// identifier in the status updates that are posted as reviews for this
+	// workflows, but also as the result label key, e.g. "TryBot-Result" would
+	// be the result label key for the "TryBot" workflow. Note the result label
+	// key is therefore tied to the configuration of this repository.
 	name: "TryBot"
 
 	on: {
 		push: {
-			branches: ["trybot/*/*", _#defaultBranch] // don't run for unity/*/* branches
+			branches: ["trybot/*/*", _#defaultBranch, _base.#testDefaultBranch] // do not run PR branches
 			"tags-ignore": [_#releaseTagPattern]
 		}
 		pull_request: {}
@@ -44,10 +49,14 @@ trybot: _base.#bashWorkflow & {
 					with: ref:        "${{ github.event.pull_request.head.sha }}"
 					with: submodules: true
 				},
-				_base.#earlyChecks,
+				_base.#earlyChecks & {
+					// These checks don't vary based on the Go version or OS,
+					// so we only need to run them on one of the matrix jobs.
+					if: "\(#_isLatestLinux)"
+				},
 				_base.#cacheGoModules,
 				json.#step & {
-					if:  "${{ \(_base.#isDefaultBranch) }}"
+					if:  "\(_base.#isDefaultBranch)"
 					run: "echo CUE_LONG=true >> $GITHUB_ENV"
 				},
 				_#goModVerify,
@@ -71,7 +80,7 @@ trybot: _base.#bashWorkflow & {
 		run:  "go generate ./..."
 		// The Go version corresponds to the precise version specified in
 		// the matrix. Skip windows for now until we work out why re-gen is flaky
-		if: "matrix.go-version == '\(_#latestStableGo)' && matrix.os == '\(_#linuxMachine)'"
+		if: "\(#_isLatestLinux)"
 	}
 
 	_#goTest: json.#step & {
@@ -86,7 +95,7 @@ trybot: _base.#bashWorkflow & {
 		// dependencies that vary wildly between platforms.
 		// For now, to save CI resources, just run the checks on one matrix job.
 		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
-		if:   "matrix.go-version == '\(_#latestStableGo)' && matrix.os == '\(_#linuxMachine)'"
+		if: "\(#_isLatestLinux)"
 		name: "Check"
 		run:  "go vet ./..."
 	}
@@ -108,6 +117,6 @@ trybot: _base.#bashWorkflow & {
 
 	_#staticcheck: json.#step & {
 		name: "staticcheck"
-		run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.3.2 ./..."
+		run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.3.3 ./..."
 	}
 }

@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -150,7 +149,7 @@ func testDef(c *Command, args []string) error {
 		}
 		// Work out whether the current GOOS/GOARCH is appropriate for the target
 		// docker image
-		td, err := ioutil.TempDir("", "unity-self-dir")
+		td, err := os.MkdirTemp("", "unity-self-dir")
 		if err != nil {
 			return fmt.Errorf("failed to create a temp directory for self build: %v", err)
 		}

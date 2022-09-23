@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -275,7 +274,7 @@ func newModuleTester(mt moduleTester) (*moduleTester, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive working directory: %v", err)
 	}
-	td, err := ioutil.TempDir("", "unity-module-tester")
+	td, err := os.MkdirTemp("", "unity-module-tester")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temporary working directory: %v", err)
 	}
@@ -301,7 +300,7 @@ func (mt *moduleTester) cleanup() error {
 
 // tempDir returns a temporary directory within the working temporary directory
 func (mt *moduleTester) tempDir(name string) (string, error) {
-	return ioutil.TempDir(mt.working, name)
+	return os.MkdirTemp(mt.working, name)
 }
 
 // newInstance creates a module instances rooted in the CUE module that is dir.
