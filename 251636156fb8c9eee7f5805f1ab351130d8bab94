@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8e68320_6626032e",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "nit: consider go mod edit -replace",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "93a9e8a8_aa171869",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "TODO: is golang.org/dl\u0027s \"download\" command safe for concurrent use?",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eeb695c3_b803bdfb",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "TODO: add -count\u003d1, because if the docker image changes, the test cache might be a hit when we don\u0027t want it to be",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60d0ed1d_353935c5",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 620,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "nit: passing the whole host environment to the guest in safe mode is... unnecessary",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40b70681_5a648833",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "TODO: only allow PATH in our tests via a testscript setup env var, like CUE_UNITY_ALLOW_PATH_RESOLVER\u003dtrue, so that \"production\" unity doesn\u0027t allow using this version resolver",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c75e9ac_b295f3a4",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "nit: use `.` as a pattern",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7fd71a56_38113c95",
+        "filename": "unity_go_gen.cue",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-28T09:00:35Z",
+      "side": 1,
+      "message": "GoTests: [string]: #GoTest",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
