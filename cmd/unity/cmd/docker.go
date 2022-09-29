@@ -20,6 +20,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO(mvdan): consider a single file with all the encoded data, like JSON,
+// which should mean less code and the ability to pass maps/slices easily.
+// That is with the assumption that noone would run `unity docker` manually.
 const (
 	flagDockerSelf          flagName = "self"
 	flagDockerManifest      flagName = "manifest"

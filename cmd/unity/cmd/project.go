@@ -47,6 +47,10 @@ const (
 	// packageTests is the name of the package within which we define
 	// the module test manifest and the testscript files
 	packageTests = "tests"
+
+	// goTestsDir is the name of the directory where we place an extra worktree
+	// copy to use when running Go tests.
+	goTestsDir = "gotests"
 )
 
 var (
@@ -523,14 +527,19 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to create workdir root: %v", err)
 	}
+	worktreeCopies := []string{
+		filepath.Join(td, goTestsDir),
+	}
 	for _, s := range m.scripts {
 		// uses the pattern of directory construction from testscript
 		name := filepath.Base(s)
 		name = strings.TrimSuffix(name, ".txtar")
 		name = strings.TrimSuffix(name, ".txt")
-		dir := filepath.Join(td, "script-"+name, repoDir)
+		worktreeCopies = append(worktreeCopies, filepath.Join(td, "script-"+name, repoDir))
+	}
+	for _, dir := range worktreeCopies {
 		if err := os.MkdirAll(dir, 0777); err != nil {
-			return fmt.Errorf("failed to create workdir for %s: %v", s, err)
+			return fmt.Errorf("failed to create workdir for %s: %v", dir, err)
 		}
 		if _, err = gitDir(m.gitRoot, "worktree", "add", "--detach", dir); err != nil {
 			return fmt.Errorf("failed to create copy of current HEAD from %s: %v", m.gitRoot, err)
@@ -563,6 +572,7 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 		testerRelPath: m.testerRelPath,
 		cuePath:       cuePath,
 		version:       version,
+		goTests:       m.manifest.GoTests,
 		update:        allowUpdate && mt.update,
 		verbose:       mt.verbose,
 	}
@@ -571,6 +581,70 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	defer func() {
 		tr.duration = time.Since(start)
 	}()
+
+	// TODO(mvdan): consider a single `go test` invocation, since we could then
+	// pass the -run flag via -exec.
+	// We could similarly run the test scripts via `go test` and a temporary
+	// module requiring go-internal and containing just a tmp_test.go.
+	// Then, we could test everything with at most two `go test` invocations,
+	// and those would also handle concurrency for us via `go test -p`.
+
+	// TODO(mvdan): edit the CUE version in go.mod per rmi.version.
+	// Probably use `go mod edit -replace` followed by `go mod tidy`,
+	// to ensure that we don't attempt to fight MVS with downgrades.
+
+	// TODO(mvdan): use the Go version specified by GoVersion in tests.cue.
+	// or even better, use the version from the `toolchain` line per
+	// https://github.com/golang/go/discussions/55092
+	// Remember to check whether `go1.19.1 download` is safe for concurrent use.
+
+	// TODO(mvdan): we should have a test that ensures that safe mode actually
+	// works, by e.g. trying to peek at the host machine.
+	for pkgPattern, testFlags := range rmi.goTests {
+		testArgs := []string{"test",
+			// We don't need nor want to run vet.
+			"-vet=off",
+
+			// Ensure that we always run the tests without reusing the test cache.
+			// This is important to get accurate timing results,
+			// but also to prevent unintended test cache hits,
+			// such as if the Docker image behind a tag changes.
+			"-count=1",
+		}
+		for _, pattern := range testFlags.Run {
+			testArgs = append(testArgs, "-run="+pattern)
+		}
+		if !mt.unsafe {
+			testArgs = append(testArgs, fmt.Sprintf("-exec=%s dockexec %s", mt.self, dockerImageDefault))
+		}
+		if rmi.verbose {
+			testArgs = append(testArgs, "-v")
+		}
+		testArgs = append(testArgs, pkgPattern)
+		cmd := exec.Command("go", testArgs...)
+
+		// Run `go test` inside the goTestsDir worktree copy.
+		cmd.Dir = filepath.Join(rmi.workdirRoot, goTestsDir)
+
+		cmd.Env = os.Environ()
+		if !mt.unsafe {
+			cmd.Env = append(cmd.Env, mt.buildHelper.buildEnv()...)
+		}
+
+		cmd.Stdout = tr.log
+		cmd.Stderr = tr.log
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+		if err := cmd.Wait(); err != nil {
+			var exitError *exec.ExitError
+			if errors.As(err, &exitError) {
+				return errTestFail
+			}
+			return err
+		}
+	}
+
 	if mt.unsafe {
 		return runModule(tr.log, rmi)
 	}
@@ -585,6 +659,7 @@ type runModuleInfo struct {
 	testerRelPath string
 	cuePath       string
 	version       string
+	goTests       map[string]unity.GoTestFlags
 	update        bool
 	verbose       bool
 }

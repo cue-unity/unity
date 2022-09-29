@@ -38,6 +38,9 @@ func (p *pathResolver) resolve(version, dir, workingDir, target string) (string,
 	if version != "PATH" {
 		return "", errNoMatch
 	}
+	// TODO(mvdan): only allow PATH in our tests via a testscript setup env var,
+	// like CUE_UNITY_ALLOW_PATH_RESOLVER=true, so that "production" unity
+	// doesn't allow using this version resolver.
 	if !p.config.allowPATH {
 		return "", errPATHNotAllowed
 	}

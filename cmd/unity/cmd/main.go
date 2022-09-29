@@ -99,6 +99,7 @@ func newRootCmd() *Command {
 	subCommands := []*cobra.Command{
 		newTestCmd(c),
 		newDockerCmd(c),
+		newDockexecCmd(c),
 	}
 	// TODO: add help topics
 

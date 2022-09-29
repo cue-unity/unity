@@ -1,0 +1,179 @@
+# Verify that we can run Go tests from projects.
+# We keep a simple test script to ensure we can run both.
+
+# Initial setup
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
+
+# Test
+exec unity test --verbose
+! stdout 'ShouldNotBeRun'
+stdout 'PASS: TestFoo '
+stdout 'PASS: TestBarOne '
+stdout 'PASS: TestBarTwo '
+stdout 'PASS: basic/'
+stdout 'x: 5'
+
+-- .unquote --
+cue.mod/tests/basic.txt
+-- cue.mod/pkg/acme.com/other/other.cue --
+package other
+
+y: 5
+-- cue.mod/pkg/acme.com/other/cue.mod/module.cue --
+module: "acme.com/other"
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+GoVersion: "go1.18"
+
+GoTests: "./lib1": Run: ["^TestFoo$", "^TestBar.*"]
+GoTests: "./sub/...": Run: ["."]
+
+-- cue.mod/tests/basic.txt --
+>cue eval
+>cmp stdout $WORK/eval.golden
+>
+>-- eval.golden --
+>x: 5
+-- x.cue --
+package x
+
+x: 5
+-- lib1/lib.go --
+package lib1
+
+func foo() string { return "not in a test file" }
+-- lib1/lib_test.go --
+package lib1 // testing within the same package
+
+import "testing"
+
+func TestFoo(t *testing.T) {
+	if s := foo(); len(s) == 0 {
+		t.Fatal("foo() was unexpectedly empty")
+	}
+}
+
+func TestFooShouldNotBeRun(t *testing.T) { t.Log("running") }
+
+func TestBarOne(t *testing.T) { t.Log("running") }
+func TestBarTwo(t *testing.T) { t.Log("running") }
+
+-- sub/sub1/sub.go --
+package sub1
+
+func Foo() string { return "not in a test file" }
+-- sub/sub1/sub_test.go --
+package sub1_test // testing from an external package
+
+import (
+	"testing"
+	"mod.com/sub/sub1"
+)
+
+func TestFoo(t *testing.T) {
+	if s := sub1.Foo(); len(s) == 0 {
+		t.Fatal("foo() was unexpectedly empty")
+	}
+}
+-- sub/sub2/sub_test.go --
+package sub2_test // note the lack of non-test files in this package
+
+import (
+	"fmt"
+
+	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/cuecontext"
+)
+
+func ExampleContext() { // pulled from cuelang.org/go
+	ctx := cuecontext.New()
+
+	v := ctx.CompileString(`
+		a: 2
+		b: 3
+		"a+b": a + b
+	`)
+
+	p("lookups")
+	p("a:     %v", v.LookupPath(cue.ParsePath("a")))
+	p("b:     %v", v.LookupPath(cue.ParsePath("b")))
+	p(`"a+b": %v`, v.LookupPath(cue.ParsePath(`"a+b"`)))
+	p("")
+	p("expressions")
+	p("a + b: %v", ctx.CompileString("a + b", cue.Scope(v)))
+	p("a * b: %v", ctx.CompileString("a * b", cue.Scope(v)))
+
+	// Output:
+	// lookups
+	// a:     2
+	// b:     3
+	// "a+b": 5
+	//
+	// expressions
+	// a + b: 5
+	// a * b: 6
+}
+
+func p(format string, args ...interface{}) {
+	fmt.Printf(format+"\n", args...)
+}
+-- go.mod --
+module mod.com
+
+go 1.20
+
+require cuelang.org/go v0.4.3
+
+require (
+	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
+	github.com/google/uuid v1.2.0 // indirect
+	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
+	github.com/pkg/errors v0.8.1 // indirect
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
+	golang.org/x/text v0.3.7 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+)
+-- go.sum --
+cuelang.org/go v0.4.3 h1:W3oBBjDTm7+IZfCKZAmC8uDG0eYfJL4Pp/xbbCMKaVo=
+cuelang.org/go v0.4.3/go.mod h1:7805vR9H+VoBNdWFdI7jyDR3QLUPp4+naHfbcgp55HI=
+github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I=
+github.com/cockroachdb/apd/v2 v2.0.1 h1:y1Rh3tEU89D+7Tgbw+lp52T6p/GJLpDmNvr10UWqLTE=
+github.com/cockroachdb/apd/v2 v2.0.1/go.mod h1:DDxRlzC2lo3/vSlmSoS7JkqbbrARPuFOGr0B9pvN3Gw=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/emicklei/proto v1.6.15 h1:XbpwxmuOPrdES97FrSfpyy67SSCV/wBIKXqgJzh6hNw=
+github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
+github.com/google/go-cmp v0.4.0 h1:xsAVV57WRhGj6kEIi8ReJzQlHHqcBYCElAvkovg3B/4=
+github.com/google/uuid v1.2.0 h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=
+github.com/google/uuid v1.2.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
+github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
+github.com/lib/pq v1.0.0 h1:X5PMW56eZitiTeO7tKzZxFCSpbFZJtkMMooicw2us9A=
+github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de h1:D5x39vF5KCwKQaw+OC9ZPiLVHXz3UFw2+psEX+gYcto=
+github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de/go.mod h1:kJun4WP5gFuHZgRjZUWWuH1DTxCtxbHDOIJsudS8jzY=
+github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
+github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/protocolbuffers/txtpbfmt v0.0.0-20201118171849-f6a6b3f636fc h1:gSVONBi2HWMFXCa9jFdYvYk7IwW/mTLxWOF7rXS4LO0=
+github.com/rogpeppe/go-internal v1.8.1 h1:geMPLpDpQOgVyCg5z5GoRwLHepNdb71NXb67XFkP+Eg=
+github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
+golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
+golang.org/x/net v0.0.0-20200226121028-0de0cce0169b h1:0mm1VjtFUOIlE1SbDlwjYaDxZVDP2S5ou6y0gSgXHu8=
+golang.org/x/net v0.0.0-20200226121028-0de0cce0169b/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
+golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
+golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b h1:h8qDotaEPuJATrMmW04NCwg7v22aHH28wwpauUhK9Oo=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

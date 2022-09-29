@@ -48,10 +48,15 @@ const (
 	flagTestSkipBase    flagName = "skip-base"
 
 	// dockerImage is the image we use when running in safe mode
-	//
-	// TODO: add support for custom docker images. Such images must support the interface
-	// of requiring USER_UID and USER_GID
+	// TODO(mvdan): replace with dockerImageDefault once we use dockexec for
+	// testscripts as well.
 	dockerImage = "docker.io/cueckoo/unity@sha256:e9480dcb2a99ea7a128c0d560964aa4d1f642485da1328b1daa2e46800e33b59"
+
+	// dockerImageDefault is the Docker image used by default when running in
+	// safe mode.
+	//
+	// TODO: Add support for custom docker images.
+	dockerImageDefault = "debian:11.5-slim"
 )
 
 // newTestCmd creates a new test command
@@ -197,6 +202,9 @@ func testDef(c *Command, args []string) error {
 		verbose:         flagTestVerbose.Bool(c),
 		skipBase:        flagTestSkipBase.Bool(c),
 	})
+	// TODO(mvdan): we should check that removing the temporary directory did
+	// not fail, which could lead to leaving files behind.
+	// We should also add tests that create files to see that we can delete them.
 	defer mt.cleanup()
 
 	if err != nil {
