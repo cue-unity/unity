@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad9fb4cd_e2530714",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e8e68320_6626032e",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "93a9e8a8_aa171869",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-09-28T09:00:35Z",
       "side": 1,
       "message": "TODO: is golang.org/dl\u0027s \"download\" command safe for concurrent use?",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bec67442_e2ec4f1b",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "93a9e8a8_aa171869",
       "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -52,6 +88,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ace88aae_ed064e37",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eeb695c3_b803bdfb",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "60d0ed1d_353935c5",
@@ -65,6 +119,24 @@
       "writtenOn": "2022-09-28T09:00:35Z",
       "side": 1,
       "message": "nit: passing the whole host environment to the guest in safe mode is... unnecessary",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6fb913a_ba1f8f92",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 620,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "We agreed that this was OK since, in safe mode, Docker hides the environment anyway.",
+      "parentUuid": "60d0ed1d_353935c5",
       "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -86,6 +158,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "94a95845_ff11eb1a",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "40b70681_5a648833",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8c75e9ac_b295f3a4",
@@ -103,6 +193,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b95f0846_65c8a26e",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c75e9ac_b295f3a4",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7fd71a56_38113c95",
@@ -116,6 +224,24 @@
       "writtenOn": "2022-09-28T09:00:35Z",
       "side": 1,
       "message": "GoTests: [string]: #GoTest",
+      "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fab6003_6156f93a",
+        "filename": "unity_go_gen.cue",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-29T13:22:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fd71a56_38113c95",
       "revId": "251636156fb8c9eee7f5805f1ab351130d8bab94",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
