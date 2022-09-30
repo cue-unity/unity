@@ -16,6 +16,210 @@
       "message": "Now ready for review :) ",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd54881f_53189f70",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Just a few small comments/questions.",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb947f6f_027fae13",
+        "filename": "cmd/unity/cmd/docker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Sounds good. This list of flags grew rather organically.",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b338fa6a_0f033068",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "2022",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "417619f2_df353193",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Sounds good. Thanks for allowing us to borrow this :)",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8af9f9ef_69535c12",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Nit: this is used below.",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "602dc066_a375597f",
+        "filename": "cmd/unity/cmd/path_resolver.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Strong agree, per our discussion.",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c3d05ef_966db3bd",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Is this a reference to Docker not being available in all situations?",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca065ef1_d81bfe3f",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Interesting that Gerrit did not block on this.\n\nApparently Google have a convention of XXX as a comment that must be addressed before submit. \n\nPerhaps we should similar have a submit requirement around this?",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2665e6a6_3d82b5d2",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Feels like we should add a test that creates a file as part of the test to ensure that a) that file is created with the right permissions so that b) the temp dir within which the test is run is properly cleaned up?\n\nBecause from memory we don\u0027t look at the error returned by the removal of that containing temporary directory.\n\nIndeed maybe we should change that logic to fail if we can\u0027t clean up the tempdir to be safe?",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "972b827b_089eb020",
+        "filename": "unity.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "I think we concluded that in the future this field would not be required at all, correct? And that the source of truth would become toolchain from the go.mod file?\n\n\"replace this\" seems to suggest we will rename this field.",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32fcc6cf_c99cb92d",
+        "filename": "unity.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "Yes.\n\n    GoVersion *string `cue:\"\u003d~ \\\"^hello\\\"\"`",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b35a31a_4589f61b",
+        "filename": "unity.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T05:49:11Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
