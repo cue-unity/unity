@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0dc3f7e_3de351fa",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T11:39:24Z",
+      "side": 1,
+      "message": "Nit: comment is a copy-paste from a previous command.",
+      "revId": "eec7329cab6fcb9aab6b448162488396a4ec46d1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}

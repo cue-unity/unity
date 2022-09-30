@@ -245,6 +245,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "10d9b80a_da9fbba6",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T11:39:24Z",
+      "side": 1,
+      "message": "Got it, thanks.",
+      "parentUuid": "3df847b0_c84b6541",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ca065ef1_d81bfe3f",
@@ -311,6 +329,24 @@
       "side": 1,
       "message": "Good point. I\u0027ve added a TODO for this where we clean up without checking for errors - that code is untouched in this CL, so the change feels orthogonal and this CL is big enough as is.",
       "parentUuid": "2665e6a6_3d82b5d2",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54fe3d43_06d7019e",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2022-09-30T11:39:24Z",
+      "side": 1,
+      "message": "Agreed.",
+      "parentUuid": "7e693d5e_adc9f6e0",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
