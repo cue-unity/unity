@@ -52,6 +52,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "14b266c3_c2b06e4b",
+        "filename": "cmd/unity/cmd/docker.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "eb947f6f_027fae13",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b338fa6a_0f033068",
@@ -65,6 +83,24 @@
       "writtenOn": "2022-09-30T05:49:11Z",
       "side": 1,
       "message": "2022",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3261b8e4_f4074705",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b338fa6a_0f033068",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -86,6 +122,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "669a7fb9_d57c5162",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "417619f2_df353193",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8af9f9ef_69535c12",
@@ -99,6 +153,24 @@
       "writtenOn": "2022-09-30T05:49:11Z",
       "side": 1,
       "message": "Nit: this is used below.",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "296b65d9_ef17c1ed",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "I meant we don\u0027t use the flag in the command line. clarified.",
+      "parentUuid": "8af9f9ef_69535c12",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -120,6 +192,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "59963329_8926b2b1",
+        "filename": "cmd/unity/cmd/path_resolver.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "602dc066_a375597f",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6c3d05ef_966db3bd",
@@ -133,6 +223,24 @@
       "writtenOn": "2022-09-30T05:49:11Z",
       "side": 1,
       "message": "Is this a reference to Docker not being available in all situations?",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3df847b0_c84b6541",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "I mean that if we have a coding bug that means that the \"safe\" mode actually runs like the \"unsafe\" mode, none of our current tests will catch that. we should test that the \"safe\" mode actually does what it is meant to for both Go tests and test scripts.\n\nFor example, when I first implemented support for Go tests, I hadn\u0027t implemented \"safe\" mode at all yet. I ran the tests, and to my surprise, they all passed :)",
+      "parentUuid": "6c3d05ef_966db3bd",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -154,6 +262,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f037c56_4d6a812e",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "DO NOT SUBMIT is for commit messages - I forgot that it doesn\u0027t apply to contents. Thanks for spotting.\n\nhttps://github.com/cue-lang/cue/issues/1959",
+      "parentUuid": "ca065ef1_d81bfe3f",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2665e6a6_3d82b5d2",
@@ -167,6 +293,24 @@
       "writtenOn": "2022-09-30T05:49:11Z",
       "side": 1,
       "message": "Feels like we should add a test that creates a file as part of the test to ensure that a) that file is created with the right permissions so that b) the temp dir within which the test is run is properly cleaned up?\n\nBecause from memory we don\u0027t look at the error returned by the removal of that containing temporary directory.\n\nIndeed maybe we should change that logic to fail if we can\u0027t clean up the tempdir to be safe?",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e693d5e_adc9f6e0",
+        "filename": "cmd/unity/cmd/testdata/scripts/test_project_gotest.txtar",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Good point. I\u0027ve added a TODO for this where we clean up without checking for errors - that code is untouched in this CL, so the change feels orthogonal and this CL is big enough as is.",
+      "parentUuid": "2665e6a6_3d82b5d2",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -188,6 +332,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3916e8e_a3d2b6f4",
+        "filename": "unity.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "now says \"deprecate\".",
+      "parentUuid": "972b827b_089eb020",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "32fcc6cf_c99cb92d",
@@ -205,6 +367,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d89a4713_2e8ab02d",
+        "filename": "unity.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32fcc6cf_c99cb92d",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b35a31a_4589f61b",
@@ -218,6 +398,24 @@
       "writtenOn": "2022-09-30T05:49:11Z",
       "side": 1,
       "message": "👍",
+      "revId": "7559d250ea61da85346300dae55c5488e65086c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "734d52ae_9692b571",
+        "filename": "unity.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-09-30T10:49:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2b35a31a_4589f61b",
       "revId": "7559d250ea61da85346300dae55c5488e65086c3",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
