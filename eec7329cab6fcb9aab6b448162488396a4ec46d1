@@ -16,6 +16,24 @@
       "message": "Nit: comment is a copy-paste from a previous command.",
       "revId": "eec7329cab6fcb9aab6b448162488396a4ec46d1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e77c37dc_91f2cca2",
+        "filename": "cmd/unity/cmd/dockexec.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2022-10-03T11:55:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0dc3f7e_3de351fa",
+      "revId": "eec7329cab6fcb9aab6b448162488396a4ec46d1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
