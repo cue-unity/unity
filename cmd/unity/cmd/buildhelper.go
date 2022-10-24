@@ -34,7 +34,7 @@ const (
 	// project clones are maintained
 	clonesDir = "clones"
 
-	// cloneLockfile is the filname suffix given to lock files of clones.
+	// cloneLockfile is the filename suffix given to lock files of clones.
 	cloneLockfile = ".lock"
 )
 
