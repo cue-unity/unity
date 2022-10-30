@@ -1,0 +1,78 @@
+# Verify that unity behaves correctly in the "safe" and "unsafe" modes.
+# The test files below are named after "safe" rather than "unsafe",
+# so when UNITY_UNSAFE=true, we delete safe_true.txt to test safe_false.txt.
+# The inverse happens when we test with UNITY_UNSAFE=false.
+#
+# When we run in unsafe mode, we expect to be able to see the host's HOME
+# directory, as we're not inside a chroot.
+# In safe mode, we're not meant to see it at all.
+# This test is not perfect, because the host's HOME might not exist at all,
+# or it might share a name with the docker container, like "/root".
+# However, those seem like rare edge cases we don't need to worry about.
+
+expand cue.mod/tests/safe_true.txt
+expand cue.mod/tests/safe_false.txt
+expand safety_test.go
+rm cue.mod/tests/safe_${UNITY_UNSAFE}.txt
+
+# Initial setup
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
+
+# Test verbose output
+exec unity test --verbose
+stdout 'PASS: safe_'
+stdout 'PASS: TestSafety'
+
+-- .unquote --
+cue.mod/tests/safe_true.txt
+cue.mod/tests/safe_false.txt
+-- cue.mod/module.cue --
+module: "mod.com"
+
+-- cue.mod/tests/tests.cue --
+package tests
+
+Versions: ["PATH"]
+
+GoTests: ".": Run: ["."]
+
+-- cue.mod/tests/safe_true.txt --
+>env
+>! exists ${UNITY_HOST_HOME}
+-- cue.mod/tests/safe_false.txt --
+>env
+>exists ${UNITY_HOST_HOME}
+-- x.cue --
+package x
+
+x: 5
+-- go.mod --
+module mod.com
+
+go 1.20
+-- safety_test.go --
+package safety
+
+import (
+	"os"
+	"testing"
+)
+
+const envUnityUnsafe = ${UNITY_UNSAFE} // replaced with true or false
+const envUnityHostHome = "${UNITY_HOST_HOME}" // replaced with a string
+
+func TestSafety(t *testing.T) {
+	_, err := os.Stat(envUnityHostHome)
+	homeExists := err == nil
+	if envUnityUnsafe {
+		if !homeExists {
+			t.Fatalf("expected %q to be reachable in unsafe mode", envUnityHostHome)
+		}
+	} else {
+		if homeExists {
+			t.Fatalf("expected %q to not be reachable in safe mode", envUnityHostHome)
+		}
+	}
+}
