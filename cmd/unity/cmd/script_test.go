@@ -98,6 +98,7 @@ func TestScripts(t *testing.T) {
 					env.Setenv("UNITY_SEMVER_URL_TEMPLATE", "file://"+filepath.Join(cwd, "testdata", "archives", "{{.Artefact}}"))
 					env.Setenv("UNITY_UNSAFE", fmt.Sprintf("%t", unityUnsafe))
 					env.Setenv("UNITY_TESTSCRIPT", "true")
+					env.Setenv("UNITY_HOST_FILE", cwd)
 
 					// Always run git config steps
 					h.git("config", "--global", "user.name", "unity")
@@ -113,6 +114,16 @@ func TestScripts(t *testing.T) {
 						return err
 					}
 					return nil
+				},
+				Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+					"expand": func(ts *testscript.TestScript, neg bool, args []string) {
+						for _, arg := range args {
+							path := ts.MkAbs(arg)
+							content := ts.ReadFile(path)
+							content = os.Expand(content, ts.Getenv)
+							ts.Check(os.WriteFile(path, []byte(content), 0o666))
+						}
+					},
 				},
 				Condition:           cuetest.Condition,
 				RequireExplicitExec: true,
