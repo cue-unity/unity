@@ -45,7 +45,37 @@ unity: _base.#bashWorkflow & {
 				json.#step & {
 					name: "Run unity"
 					run: """
-						./_scripts/runUnity.sh change:$(basename $(dirname $GITHUB_REF))/$(basename $GITHUB_REF)
+						change_id=$(basename $(dirname $GITHUB_REF))
+						revision_id=$(basename $GITHUB_REF)
+
+						dir_head=$PWD/checkout_head
+						dir_parent=$PWD/checkout_parent
+
+						# Initialize an empty git repo and fetch the CL.
+						# depth=2 is enough for HEAD and its parent.
+						# Make a copy for the parent checkout to reuse the fetch.
+						# Note that the gerrit ref has three parts, per:
+						# https://gerrit-review.googlesource.com/Documentation/intro-user.html#upload-change
+						mkdir $dir_head
+						cd $dir_head
+						git init
+						git fetch --depth=2 https://review.gerrithub.io/cue-lang/cue refs/changes/${change_id: -2}/${change_id}/${revision_id}
+						cp -r $dir_head $dir_parent
+
+						# Switch into the HEAD commit and show it.
+						cd $dir_head
+						git switch -d FETCH_HEAD
+						echo "HEAD commit:"
+						git log -1
+
+						# Switch into the parent commit and show it.
+						cd $dir_parent
+						git switch -d FETCH_HEAD~1
+						echo "parent commit:"
+						git log -1
+
+						cd ..
+						./_scripts/runUnity.sh --skip-base $dir_parent $dir_head
 						"""
 				},
 			]
