@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "703c9a30_1ddc63d3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-01-31T12:34:10Z",
+      "side": 1,
+      "message": "Diff between the previous attempt and this one: https://clbin.com/x3MXt\n\nI tested the script locally with the GITHUB_REF branch name for https://review.gerrithub.io/c/cue-lang/cue/+/548989, which failed after the first attempt.",
+      "revId": "6de1301ba60f61f7f1364e35743388402e92aedb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
