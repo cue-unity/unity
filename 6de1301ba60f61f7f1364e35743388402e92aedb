@@ -16,6 +16,40 @@
       "message": "Diff between the previous attempt and this one: https://clbin.com/x3MXt\n\nI tested the script locally with the GITHUB_REF branch name for https://review.gerrithub.io/c/cue-lang/cue/+/548989, which failed after the first attempt.",
       "revId": "6de1301ba60f61f7f1364e35743388402e92aedb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0ffca97_29669957",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-02-02T09:09:05Z",
+      "side": 1,
+      "message": "LGTM with one suggestion, thanks!",
+      "revId": "6de1301ba60f61f7f1364e35743388402e92aedb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e09fc6db_8a9e655b",
+        "filename": "internal/ci/github/unity.cue",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-02-02T09:09:05Z",
+      "side": 1,
+      "message": "Nice reminder.\n\nNit: I would slightly expand this comment to explain how the ref comes to be. i.e. we are in this workflow because of a repository dispatch in the main unity repo, which constructed a branch name of the form \"unity/$change_id/$commit\" and pushed to this repo. The \"flow\" with these various dispatches is sufficiently confusing to make it easy to forget.",
+      "revId": "6de1301ba60f61f7f1364e35743388402e92aedb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
