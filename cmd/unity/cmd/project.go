@@ -16,13 +16,16 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
+	mathrand "math/rand"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -116,7 +119,7 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 	tw.SetAutoWrapText(false)
 	tw.SetAutoFormatHeaders(true)
 	tw.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	tw.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_LEFT, tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_LEFT})
+	tw.SetAlignment(tablewriter.ALIGN_LEFT)
 	tw.SetCenterSeparator("")
 	tw.SetColumnSeparator("")
 	tw.SetRowSeparator("")
@@ -157,13 +160,37 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 			status = "FAIL"
 		}
 		prev := firstResult[tr.module]
-		v, p := float64(tr.duration), float64(prev.duration)
-		var diff, prevVersion string
+
+		result := []string{status, tr.module.path, tr.resolvedVersion}
 		if prev != tr {
-			diff = fmt.Sprintf("%+.3f%%", (v-p)/p*100)
-			prevVersion = prev.resolvedVersion
+			result = append(result, fmt.Sprintf("vs %s", prev.resolvedVersion))
 		}
-		tw.Append([]string{status, tr.module.path, tr.resolvedVersion, fmt.Sprintf("%.3fs", tr.duration.Seconds()), diff, prevVersion})
+		tw.Append(result)
+
+		// wall time is separate from CUE_STATS_FILE and it's a duration.
+		resultTime := []string{"", "WallTime", fmt.Sprintf("%.3fs", tr.duration.Seconds())}
+		if prev != tr {
+			v, p := float64(tr.duration), float64(prev.duration)
+			resultTime = append(resultTime, fmt.Sprintf("%+.3f%%", (v-p)/p*100))
+		}
+		tw.Append(resultTime)
+
+		trStatsVal := reflect.ValueOf(tr.cueStatsTotal)
+		prevStatsVal := reflect.ValueOf(prev.cueStatsTotal)
+		for _, field := range cueEvaluatorStatsFields {
+			fieldVal := trStatsVal.FieldByIndex(field.Index).Int()
+			resultField := []string{"", field.Name, fmt.Sprintf("%d", fieldVal)}
+			if prev != tr {
+				prevFieldVal := prevStatsVal.FieldByIndex(field.Index).Int()
+				v, p := float64(fieldVal), float64(prevFieldVal)
+				if v == p {
+					resultField = append(resultField, "~")
+				} else {
+					resultField = append(resultField, fmt.Sprintf("%+.3f%%", (v-p)/p*100))
+				}
+			}
+			tw.Append(resultField)
+		}
 	}
 
 	// Subjective error printing. Log errors that are non errTestFail
@@ -201,6 +228,33 @@ type testResult struct {
 	log             *bytes.Buffer
 	err             error
 	duration        time.Duration
+
+	cueStatsCount int
+	cueStatsTotal cueEvaluatorStats
+}
+
+// cueEvaluatorStats is a copy of [cuelang.org/go/cue/stats.Counts].
+// Note that upstream uses int rather than int64.
+type cueEvaluatorStats struct {
+	Unifications int64
+	Disjuncts    int64
+	Conjuncts    int64
+	Freed        int64
+	Reused       int64
+	Allocs       int64
+	Retained     int64
+}
+
+var cueEvaluatorStatsFields = reflect.VisibleFields(reflect.TypeOf(cueEvaluatorStats{}))
+
+func (cs *cueEvaluatorStats) Add(cs2 cueEvaluatorStats) {
+	cs.Unifications += cs2.Unifications
+	cs.Disjuncts += cs2.Disjuncts
+	cs.Conjuncts += cs2.Conjuncts
+	cs.Freed += cs2.Freed
+	cs.Reused += cs2.Reused
+	cs.Allocs += cs2.Allocs
+	cs.Retained += cs2.Retained
 }
 
 type moduleTester struct {
@@ -571,15 +625,22 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 		relPath:       m.relPath,
 		testerRelPath: m.testerRelPath,
 		cuePath:       cuePath,
+		cueStatsDir:   filepath.Join(td, "cue-stats"),
 		version:       version,
 		goTests:       m.manifest.GoTests,
 		update:        allowUpdate && mt.update,
 		verbose:       mt.verbose,
 	}
+	if err := os.MkdirAll(rmi.cueStatsDir, 0o777); err != nil {
+		return fmt.Errorf("failed to create cue-stats dir: %v", err)
+	}
 
 	start := time.Now()
 	defer func() {
 		tr.duration = time.Since(start)
+		if err1 := collectCueStats(tr, rmi.cueStatsDir); err1 != nil {
+			err = err1 // return the error via the named result
+		}
 	}()
 
 	// TODO(mvdan): consider a single `go test` invocation, since we could then
@@ -651,6 +712,26 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	return dockerRunModule(mt.image, tr.log, rmi)
 }
 
+func collectCueStats(tr *testResult, dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		statsBytes, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			return err
+		}
+		var stats cueEvaluatorStats
+		if err := json.Unmarshal(statsBytes, &stats); err != nil {
+			return err
+		}
+		tr.cueStatsTotal.Add(stats)
+	}
+	tr.cueStatsCount = len(entries)
+	return nil
+}
+
 type runModuleInfo struct {
 	self          string
 	manifestDir   string
@@ -658,6 +739,7 @@ type runModuleInfo struct {
 	relPath       string
 	testerRelPath string
 	cuePath       string
+	cueStatsDir   string
 	version       string
 	goTests       map[string]unity.GoTestFlags
 	update        bool
@@ -685,7 +767,7 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 		// TODO(mvdan): We should transition to `exec cue`, which has multiple
 		// advantages over a plain command.
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-			"cue": buildCmdCUE(info.cuePath),
+			"cue": buildCmdCUE(info.cuePath, info.cueStatsDir),
 		},
 	}
 	// TODO: improve logging/printing/errors when we make things concurrent
@@ -791,12 +873,16 @@ func indent(b *bytes.Buffer, indent string) string {
 	return s
 }
 
-func buildCmdCUE(path string) func(ts *testscript.TestScript, neg bool, args []string) {
+func buildCmdCUE(cuePath, statsDir string) func(ts *testscript.TestScript, neg bool, args []string) {
 	return func(ts *testscript.TestScript, neg bool, args []string) {
 		if len(args) < 1 {
 			ts.Fatalf("usage: cue subcommand ...")
 		}
-		err := ts.Exec(path, args...)
+		// Use a random stats filename for each cmd/cue invocation,
+		// so that if a single script runs cmd/cue multiple times,
+		// we end up with multiple stats files.
+		ts.Setenv("CUE_STATS_FILE", filepath.Join(statsDir, fmt.Sprintf("%d.json", mathrand.Uint32())))
+		err := ts.Exec(cuePath, args...)
 		if err != nil {
 			ts.Logf("[%v]\n", err)
 			if !neg {
