@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef0f741a_d7e3e74f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-02-14T17:28:57Z",
+      "side": 1,
+      "message": "See the commit message for a before/after, and let me know if that kind of output looks useful, or if you were thinking of something slightly different.\n\nAn alternative is to mimic `go test -bench` output to then use a standard tool like `benchstat` to make the comparison pretty for us, but I thought it wasn\u0027t worth the extra effort.",
+      "revId": "750bb3489c53d0ec12509675389d884d830dcd57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
