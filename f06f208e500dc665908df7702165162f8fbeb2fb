@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4d1681b_a130a282",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-02-17T11:08:56Z",
+      "side": 1,
+      "message": "cue/stats int64 change done in https://review.gerrithub.io/c/cue-lang/cue/+/549849",
+      "revId": "f06f208e500dc665908df7702165162f8fbeb2fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
