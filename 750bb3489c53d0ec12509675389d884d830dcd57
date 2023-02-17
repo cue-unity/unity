@@ -33,6 +33,24 @@
       "message": "I would be fine to change stats.Count to have int64 as well, if that helps.\nIt don\u0027t mind the backwards compatibility this might cause.\nThat way you can also reuse the Add and any other tools that may be added in the stats package.\n\nFine to make that a TODO",
       "revId": "750bb3489c53d0ec12509675389d884d830dcd57",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35dbd505_305538b0",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-02-17T10:53:34Z",
+      "side": 1,
+      "message": "Huh, I wasn\u0027t reusing the same type because for some reason I had gotten the idea it was an internal package.\n\nBut yes, I think using int could be problematic on 32-bit, especially if we\u0027re adding up totals.\n\nFunnily enough, I wrote the Add method on my own, without realizing you had written the exact same thing weeks ago :) \n\nAdded a TODO.",
+      "parentUuid": "e5e0a765_1acf1df8",
+      "revId": "750bb3489c53d0ec12509675389d884d830dcd57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
