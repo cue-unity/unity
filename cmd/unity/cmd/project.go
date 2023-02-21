@@ -34,6 +34,7 @@ import (
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
+	"cuelang.org/go/cue/stats"
 	"github.com/cue-unity/unity"
 	"github.com/olekukonko/tablewriter"
 	"github.com/rogpeppe/go-internal/testscript"
@@ -178,6 +179,7 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 		if tr.cueStatsCount == 0 {
 			// This cmd/cue version does not know how to produce evaluator stats
 			// via CUE_STATS_FILE yet. We don't have anything more to print.
+			fmt.Fprintf(os.Stderr, "version %q did not produce any CUE_STATS_FILE\n", tr.resolvedVersion)
 			return
 		}
 
@@ -187,8 +189,13 @@ func (mt *moduleTester) test(modules []*module, versions []string) error {
 			fieldVal := trStatsVal.FieldByIndex(field.Index).Int()
 			resultField := []string{"", field.Name, fmt.Sprintf("%d", fieldVal)}
 			if prev != tr && prev.cueStatsCount != tr.cueStatsCount {
-				// The previous cmd/cue version didn't produce evaluator stats.
-				// Print the current version's stats, but no comparison.
+				// The previous cmd/cue version didn't produce the same amount
+				// of stats files as the version we just tested.
+				// This could happen if the previous version didn't support CUE_STATS_FILE yet,
+				// or if we somehow dropped a stats file due to a bug.
+				// Print the current version's stats, but no comparison, as it wouldn't be useful.
+				fmt.Fprintf(os.Stderr, "previous version %q produced %d CUE_STATS_FILE files, but %q produced %d\n",
+					prev.resolvedVersion, prev.cueStatsCount, tr.resolvedVersion, tr.cueStatsCount)
 			} else if prev != tr {
 				prevFieldVal := prevStatsVal.FieldByIndex(field.Index).Int()
 				v, p := float64(fieldVal), float64(prevFieldVal)
@@ -239,33 +246,10 @@ type testResult struct {
 	duration        time.Duration
 
 	cueStatsCount int
-	cueStatsTotal cueEvaluatorStats
+	cueStatsTotal stats.Counts
 }
 
-// cueEvaluatorStats is a copy of [cuelang.org/go/cue/stats.Counts].
-// Note that upstream uses int rather than int64.
-// TODO: make cue/stats.Counts use int64 and reuse it.
-type cueEvaluatorStats struct {
-	Unifications int64
-	Disjuncts    int64
-	Conjuncts    int64
-	Freed        int64
-	Reused       int64
-	Allocs       int64
-	Retained     int64
-}
-
-var cueEvaluatorStatsFields = reflect.VisibleFields(reflect.TypeOf(cueEvaluatorStats{}))
-
-func (cs *cueEvaluatorStats) Add(cs2 cueEvaluatorStats) {
-	cs.Unifications += cs2.Unifications
-	cs.Disjuncts += cs2.Disjuncts
-	cs.Conjuncts += cs2.Conjuncts
-	cs.Freed += cs2.Freed
-	cs.Reused += cs2.Reused
-	cs.Allocs += cs2.Allocs
-	cs.Retained += cs2.Retained
-}
+var cueEvaluatorStatsFields = reflect.VisibleFields(reflect.TypeOf(stats.Counts{}))
 
 type moduleTester struct {
 	// self is the path to the compiled version of self to be run within
@@ -568,6 +552,10 @@ type module struct {
 	hasStaged bool
 }
 
+// cueStatsSubdir is a subdirectory inside workdirRoot where cmd/cue writes
+// CUE_STATS_FILE JSON files.
+const cueStatsSubdir = "cue-evaluator-stats"
+
 func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 	m := tr.module
 	version := tr.version
@@ -635,20 +623,20 @@ func (mt *moduleTester) run(tr *testResult, allowUpdate bool) (err error) {
 		relPath:       m.relPath,
 		testerRelPath: m.testerRelPath,
 		cuePath:       cuePath,
-		cueStatsDir:   filepath.Join(td, "cue-stats"),
 		version:       version,
 		goTests:       m.manifest.GoTests,
 		update:        allowUpdate && mt.update,
 		verbose:       mt.verbose,
 	}
-	if err := os.MkdirAll(rmi.cueStatsDir, 0o777); err != nil {
+	statsDir := filepath.Join(rmi.workdirRoot, cueStatsSubdir)
+	if err := os.MkdirAll(statsDir, 0o777); err != nil {
 		return fmt.Errorf("failed to create cue-stats dir: %v", err)
 	}
 
 	start := time.Now()
 	defer func() {
 		tr.duration = time.Since(start)
-		if err1 := collectCueStats(tr, rmi.cueStatsDir); err1 != nil {
+		if err1 := collectCueStats(tr, statsDir); err1 != nil {
 			err = err1 // return the error via the named result
 		}
 	}()
@@ -735,11 +723,11 @@ func collectCueStats(tr *testResult, dir string) error {
 		if err != nil {
 			return err
 		}
-		var stats cueEvaluatorStats
-		if err := json.Unmarshal(statsBytes, &stats); err != nil {
+		var counts stats.Counts
+		if err := json.Unmarshal(statsBytes, &counts); err != nil {
 			return err
 		}
-		tr.cueStatsTotal.Add(stats)
+		tr.cueStatsTotal.Add(counts)
 	}
 	tr.cueStatsCount = len(entries)
 	return nil
@@ -752,7 +740,6 @@ type runModuleInfo struct {
 	relPath       string
 	testerRelPath string
 	cuePath       string
-	cueStatsDir   string
 	version       string
 	goTests       map[string]unity.GoTestFlags
 	update        bool
@@ -760,6 +747,7 @@ type runModuleInfo struct {
 }
 
 func runModule(log io.Writer, info runModuleInfo) (err error) {
+	statsDir := filepath.Join(info.workdirRoot, cueStatsSubdir)
 	params := testscript.Params{
 		UpdateScripts: info.update,
 		// TODO(mvdan): Consider using RequireExplicitExec in the future.
@@ -780,7 +768,7 @@ func runModule(log io.Writer, info runModuleInfo) (err error) {
 		// TODO(mvdan): We should transition to `exec cue`, which has multiple
 		// advantages over a plain command.
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
-			"cue": buildCmdCUE(info.cuePath, info.cueStatsDir),
+			"cue": buildCmdCUE(info.cuePath, statsDir),
 		},
 	}
 	// TODO: improve logging/printing/errors when we make things concurrent
