@@ -7,7 +7,7 @@ exec git commit -m 'Initial commit'
 
 # Test
 ! exec unity test
-stderr 'failed to validate tests manifest: #Manifest: field not allowed: versions'
+stderr 'failed to validate tests manifest: #Manifest.versions: field not allowed'
 
 -- cue.mod/module.cue --
 module: "mod.com"
