@@ -16,6 +16,23 @@
       "message": "This was working locally, but not on CI; here\u0027s the fix. Once merged, Marcel and I can verify both CI features (compare to parent, evaluator stats).",
       "revId": "aa263b56516e923f3dd8fddd2df0d973c039c1b7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2991c339_1c23c486",
+        "filename": "cmd/unity/cmd/project.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-02-21T17:41:17Z",
+      "side": 1,
+      "message": "This logic doesn\u0027t seem right for the error message that follows. The comment and error message seem to suggest this scenario is when there are no stats for the previous version. The logic above is determined via tr.cueStatsCount \u003d\u003d 0. Here it appears to be comparing whether the stats _changed_ or not, no?",
+      "revId": "aa263b56516e923f3dd8fddd2df0d973c039c1b7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
