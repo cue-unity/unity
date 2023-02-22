@@ -16,6 +16,24 @@
       "message": "Code changes LGTM. But I don\u0027t understand the unity output. Why is it still using the baseline versions? Is this because we only made the change to compare against the parent commit in the unity trigger, i.e. against a CL?\n\nDoes the concept of unity running against baseline mean anything any more?\n\nIt\u0027s certainly producing noise in the CI output for this CL.",
       "revId": "7dbb6785cda5c85309bee2a146039420c7c64d2b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "685e783e_56e77230",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-02-22T15:33:43Z",
+      "side": 1,
+      "message": "CI on the Unity repo does use the baseline versions for comparison, which does result in a lot of these warnings as there are no stats to show. It is verbose, but IMO it is better to be explicit about when the stats aren\u0027t being collected, than to silently skip them without showing why.\n\nCI on the cue repo, which also runs unity, uses `unity test --skip-base $parent_commit $current_commit`, so indeed it doesn\u0027t use the baseline versions recorded in each project anymore. When I taught cue\u0027s CI to test Unity against parent commits, we agreed that it was OK to no longer test against the baseline versions, because comparing the stats across months or years worth of changes to CUE doesn\u0027t really make sense.\n\nI agree that this is all somewhat verbose and inconsistent, but it\u0027s also a temporary solution. Happy to adjust if something comes to mind, but I\u0027m not spending too much time worrying about polish.",
+      "parentUuid": "199a80f7_d42d57e3",
+      "revId": "7dbb6785cda5c85309bee2a146039420c7c64d2b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
