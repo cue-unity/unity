@@ -34,6 +34,24 @@
       "parentUuid": "199a80f7_d42d57e3",
       "revId": "7dbb6785cda5c85309bee2a146039420c7c64d2b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b4044a3_1d658bf6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-02-22T15:59:55Z",
+      "side": 1,
+      "message": "\u003e It is verbose, but IMO it is better to be explicit about when the stats aren\u0027t being collected, than to silently skip them without showing why.\n\nI don\u0027t disagree about it being better to be verbose, just that it\u0027s arguably unnecessary for us even to be testing the base versions in CI.\n\nBut we can follow up on that in a later CL as required.",
+      "parentUuid": "685e783e_56e77230",
+      "revId": "7dbb6785cda5c85309bee2a146039420c7c64d2b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
