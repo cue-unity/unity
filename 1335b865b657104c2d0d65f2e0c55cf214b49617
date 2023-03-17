@@ -35,6 +35,23 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "923f56f6_e4b08d15",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-03-17T17:00:19Z",
+      "side": 1,
+      "message": "FYI, I left another comment above as you were reviewing.",
+      "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7cf5202d_69d1bf83",
@@ -48,6 +65,24 @@
       "writtenOn": "2023-03-17T16:56:13Z",
       "side": 1,
       "message": "Nit: this comment doesn\u0027t appear to correspond to the most recent change made by you?\n\nhttps://github.com/cue-lang/cue/blame/4fed730f4d2fcaa2d2873a36fc58e7a2795545dc/internal/ci/gerrithub/gerrithub.cue#L68-L70",
+      "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a99e1c46_cc7c7f67",
+        "filename": "internal/ci/gerrithub/gerrithub.cue",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-03-17T17:00:19Z",
+      "side": 1,
+      "message": "very well spotted. I had the v0.5 release branch checked out :) luckily, that was the only change.",
+      "parentUuid": "7cf5202d_69d1bf83",
       "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
