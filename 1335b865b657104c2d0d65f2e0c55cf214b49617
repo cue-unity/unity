@@ -16,6 +16,40 @@
       "message": "Note that this also pulls in the change to start using PRs to run the trybots. I think that\u0027s a good thing, and I think it will work - the trybot workflow already runs on PRs.",
       "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e1dfb58_39cb2a47",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-17T16:56:13Z",
+      "side": 1,
+      "message": "LGTM with one nit.",
+      "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cf5202d_69d1bf83",
+        "filename": "internal/ci/gerrithub/gerrithub.cue",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-17T16:56:13Z",
+      "side": 1,
+      "message": "Nit: this comment doesn\u0027t appear to correspond to the most recent change made by you?\n\nhttps://github.com/cue-lang/cue/blame/4fed730f4d2fcaa2d2873a36fc58e7a2795545dc/internal/ci/gerrithub/gerrithub.cue#L68-L70",
+      "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
