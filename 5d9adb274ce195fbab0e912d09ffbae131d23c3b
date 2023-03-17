@@ -33,6 +33,24 @@
       "message": "chief.porcuepine@gmail.com",
       "revId": "5d9adb274ce195fbab0e912d09ffbae131d23c3b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4cbf40b4_e214fa22",
+        "filename": "project.config",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1020340
+      },
+      "writtenOn": "2023-03-17T18:52:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b16463f5_957a72c6",
+      "revId": "5d9adb274ce195fbab0e912d09ffbae131d23c3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
