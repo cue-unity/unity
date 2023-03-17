@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1dd1d7d0_6258fab3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-17T18:50:13Z",
+      "side": 1,
+      "message": "With one nit",
+      "revId": "5d9adb274ce195fbab0e912d09ffbae131d23c3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b16463f5_957a72c6",
+        "filename": "project.config",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-17T18:50:13Z",
+      "side": 1,
+      "message": "chief.porcuepine@gmail.com",
+      "revId": "5d9adb274ce195fbab0e912d09ffbae131d23c3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
