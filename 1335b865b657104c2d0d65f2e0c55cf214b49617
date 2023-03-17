@@ -52,6 +52,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "92c52200_861b1d4a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-17T17:14:02Z",
+      "side": 1,
+      "message": "Thanks - just saw that. Still LGTM.",
+      "parentUuid": "923f56f6_e4b08d15",
+      "revId": "1335b865b657104c2d0d65f2e0c55cf214b49617",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7cf5202d_69d1bf83",
