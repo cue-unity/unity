@@ -16,6 +16,23 @@
       "message": "Just placing this on hold for one sec whilst I consider something.",
       "revId": "2f438cf3242e5b0d05421b2dc49eed7ec13a9bea",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d26df59e_f639cc77",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-17T17:13:32Z",
+      "side": 1,
+      "message": "Removing hold. I was missing something obvious.",
+      "revId": "2f438cf3242e5b0d05421b2dc49eed7ec13a9bea",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
