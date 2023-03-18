@@ -29,7 +29,7 @@ trybot: _base.#bashWorkflow & {
 
 	on: {
 		push: {
-			branches: ["trybot/*/*", _#defaultBranch, _base.#testDefaultBranch] // do not run PR branches
+			branches: ["trybot/*/*/*/*", _#defaultBranch, _base.#testDefaultBranch] // do not run PR branches
 			"tags-ignore": [_#releaseTagPattern]
 		}
 		pull_request: {}
