@@ -26,7 +26,7 @@ unity: _base.#bashWorkflow & {
 
 	on: {
 		push: {
-			branches: ["unity/*/*"] // only run on unity build branches
+			branches: ["unity/*/*/*/*"] // only run on unity build branches
 		}
 	}
 
@@ -45,13 +45,14 @@ unity: _base.#bashWorkflow & {
 				json.#step & {
 					name: "Run unity"
 					run: """
-						# GITHUB_REF is in the form of "unity/$change_id/$commit".
+						# GITHUB_REF is in the form of:
+						# "unity/$change_id/$commit/$cl_number/$ps_number".
 						# When a user runs "cueckoo runtrybot", it triggers a
 						# repository dispatch on the main unity repository,
-						# which then pushes the branch unity/.../... to the
+						# which then pushes the branch unity/... to the
 						# cue-trybot repository, triggering the workflow here.
-						# The commit is enough to do a git fetch.
-						commit=$(basename $GITHUB_REF)
+						# The commit (the third element) is enough to do a git fetch.
+						commit=$(echo $GITHUB_REF | cut -d "/" -f 3)
 
 						dir_head=$PWD/checkout_head
 						dir_parent=$PWD/checkout_parent
