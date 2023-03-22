@@ -24,7 +24,7 @@ import (
 // is concerned, compared to unity_cli.
 unity_dispatch: _base.#bashWorkflow & {
 	_#type:                 _gerrithub.#dispatchUnity
-	_#branchNameExpression: "\(_#type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}"
+	_#branchNameExpression: "\(_#type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}"
 	name:                   "Dispatch \(_#type)"
 	on: ["repository_dispatch"]
 	jobs: {
@@ -41,6 +41,16 @@ unity_dispatch: _base.#bashWorkflow & {
 					with: {
 						"fetch-depth": 0
 					}
+				},
+				// Out of the entire ref (e.g. refs/changes/38/547738/7) we only
+				// care about the CL number and patchset, (e.g. 547738/7).
+				// Note that gerrithub_ref is two path elements.
+				json.#step & {
+					id: "gerrithub_ref"
+					run: #"""
+						ref="$(echo ${{github.event.client_payload.payload.ref}} | sed -E 's/^refs\/changes\/[0-9]+\/([0-9]+)\/([0-9]+).*/\1\/\2/')"
+						echo "gerrithub_ref=$ref" >> $GITHUB_OUTPUT
+						"""#
 				},
 				json.#step & {
 					name: "Trigger \(_#type)"
