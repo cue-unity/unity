@@ -6,7 +6,7 @@ require (
 	cuelang.org/go v0.6.0-0.dev.0.20230220151215-eff01087f42d
 	github.com/andygrunwald/go-gerrit v0.0.0-20220608063906-28cf26f84ecc
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/rogpeppe/go-internal v1.9.0
+	github.com/rogpeppe/go-internal v1.9.1-0.20230322215406-00e5e28d9d38
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/mod v0.6.0-dev.0.20220818022119-ed83ed61efb9
 	golang.org/x/text v0.3.8
@@ -22,7 +22,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
-	github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20220428173112-74888fd59c2b // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
