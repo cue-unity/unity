@@ -89,7 +89,7 @@ _#linuxMachine: "ubuntu-20.04"
 						git remote add origin \(#trybotRepositoryURL)
 						git fetch origin "${{ github.event.client_payload.payload.branch }}"
 						git push origin \(_#branchNameExpression)
-						echo ${{ secrets.CUECKOO_GITHUB_PAT }} | gh auth login --with-token
+						echo ${{ secrets.\(#botGitHubUserTokenSecretsKey) }} | gh auth login --with-token
 						gh pr --repo=\(#trybotRepositoryURL) create --base="${{ github.event.client_payload.payload.branch }}" --fill
 						"""
 				},
