@@ -57,5 +57,9 @@ func testCorpus(cmd *Command, mt *moduleTester, versions []string) error {
 		modules = append(modules, ms...)
 	}
 
+	if len(modules) == 0 {
+		return fmt.Errorf("corpus empty; nothing to test")
+	}
+
 	return mt.test(modules, versions)
 }

@@ -1,0 +1,44 @@
+# Verify that unity fails when run against an empty corpus.
+
+# Setup a
+cd a
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
+cd $WORK
+
+# Setup b
+cd b
+exec git init
+exec git add -A
+exec git commit -m 'Initial commit'
+cd $WORK
+
+# Setup corpus. This clones $WORK/a and $WORK/b
+# to the corpus directory at the respective paths
+cd corpus
+exec git init
+exec git submodule add $WORK/a a
+exec git submodule add $WORK/b b
+exec git add -A
+exec git commit -am 'Initial commit'
+cd $WORK
+
+# Simulate the submodules not having been checked out
+# by removing the directories within corpus. Then git
+# checkout to leave the commit in a porcelain state.
+cd corpus
+rm a b
+exec git checkout .
+cd $WORK
+
+# Test
+cd corpus
+! exec unity test --corpus
+cmp stderr $WORK/stderr.golden
+
+-- corpus/README.md --
+-- a/.keepme --
+-- b/.keepme --
+-- stderr.golden --
+corpus empty; nothing to test
