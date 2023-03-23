@@ -116,6 +116,7 @@ func TestScripts(t *testing.T) {
 				},
 				Condition:           cuetest.Condition,
 				RequireExplicitExec: true,
+				UpdateScripts:       os.Getenv("CUE_UPDATE") != "",
 			})
 		})
 	}
