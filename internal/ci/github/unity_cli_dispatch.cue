@@ -30,7 +30,9 @@ unity_cli_dispatch: _base.#bashWorkflow & {
 			"runs-on": "${{ matrix.os }}"
 			steps: [
 				_base.#installGo,
-				_base.#checkoutCode,
+				_base.#checkoutCode & {
+					with: submodules: true
+				},
 				_base.#cacheGoModules,
 				_#installUnity,
 				json.#step & {
