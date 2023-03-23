@@ -16,6 +16,24 @@
       "message": "I would even argue that the base checkout step should always do submodules. If any of our repos have submodules, they should be checked out. Any that don\u0027t have any will be unaffected by the flag.",
       "revId": "8950def3aa780f598e8b55c52f7340be7b7776d4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdd4681b_f1d4f7c1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-23T14:33:39Z",
+      "side": 1,
+      "message": "That seems reasonable. Will ensure that our refactor of the CI stuff takes this into account.",
+      "parentUuid": "9c758347_8f9cdea1",
+      "revId": "8950def3aa780f598e8b55c52f7340be7b7776d4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
