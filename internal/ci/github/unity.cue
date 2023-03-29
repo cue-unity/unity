@@ -32,7 +32,7 @@ workflows: unity: _base.#bashWorkflow & {
 
 	jobs: {
 		test: {
-			strategy:          _#testStrategy
+			strategy:          _testStrategy
 			"timeout-minutes": 15
 			"runs-on":         "${{ matrix.os }}"
 			steps: [
@@ -41,7 +41,7 @@ workflows: unity: _base.#bashWorkflow & {
 					with: submodules: true
 				},
 				_base.#cacheGoModules,
-				_#installUnity,
+				_installUnity,
 				json.#step & {
 					name: "Run unity"
 					run: """

@@ -23,14 +23,14 @@ import (
 // set, which is the identifying feature as far as this dispatch
 // is concerned, compared to unity_cli.
 workflows: unity_dispatch: _base.#bashWorkflow & {
-	_#type:                 _gerrithub.#dispatchUnity
-	_#branchNameExpression: "\(_#type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}"
-	name:                   "Dispatch \(_#type)"
+	_type:                 _gerrithub.#dispatchUnity
+	_branchNameExpression: "\(_type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}"
+	name:                   "Dispatch \(_type)"
 	on: ["repository_dispatch"]
 	jobs: {
-		"\(_#type)": {
+		"\(_type)": {
 			"runs-on": _repo.linuxMachine
-			if:        "${{ github.event.client_payload.type == '\(_#type)' && github.event.client_payload.payload.cl != null}}"
+			if:        "${{ github.event.client_payload.type == '\(_type)' && github.event.client_payload.payload.cl != null}}"
 			steps: [
 				// This workflow is triggered against the tip of the default branch.
 				// We want to create a branch named unity/$changeID/$revisionID
@@ -53,13 +53,13 @@ workflows: unity_dispatch: _base.#bashWorkflow & {
 						"""#
 				},
 				json.#step & {
-					name: "Trigger \(_#type)"
+					name: "Trigger \(_type)"
 					run:  """
 						git config user.name \(_gerrithub.#botGitHubUser)
 						git config user.email \(_gerrithub.#botGitHubUserEmail)
 						git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n \(_gerrithub.#botGitHubUser):${{ secrets.\(_gerrithub.#botGitHubUserTokenSecretsKey) }} | base64)"
-						git checkout -b \(_#branchNameExpression)
-						git push \(_gerrithub.#trybotRepositoryURL) \(_#branchNameExpression)
+						git checkout -b \(_branchNameExpression)
+						git push \(_gerrithub.#trybotRepositoryURL) \(_branchNameExpression)
 						"""
 				},
 			]

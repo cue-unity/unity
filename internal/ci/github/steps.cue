@@ -18,12 +18,12 @@ import (
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
-_#installUnity: json.#step & {
+_installUnity: json.#step & {
 	name: "Install unity"
 	run:  "./_scripts/installUnity.sh"
 }
 
-_#runUnity: json.#step & {
+_runUnity: json.#step & {
 	name: "Run unity"
 	run:  "./_scripts/runUnity.sh"
 }
