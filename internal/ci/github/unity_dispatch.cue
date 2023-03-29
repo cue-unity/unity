@@ -29,7 +29,7 @@ workflows: unity_dispatch: _base.#bashWorkflow & {
 	on: ["repository_dispatch"]
 	jobs: {
 		"\(_#type)": {
-			"runs-on": _#linuxMachine
+			"runs-on": _repo.linuxMachine
 			if:        "${{ github.event.client_payload.type == '\(_#type)' && github.event.client_payload.payload.cl != null}}"
 			steps: [
 				// This workflow is triggered against the tip of the default branch.

@@ -29,8 +29,8 @@ workflows: trybot: _base.#bashWorkflow & {
 
 	on: {
 		push: {
-			branches: ["trybot/*/*/*/*", _#defaultBranch, _base.#testDefaultBranch] // do not run PR branches
-			"tags-ignore": [_#releaseTagPattern]
+			branches: ["trybot/*/*/*/*", _repo.defaultBranch, _base.#testDefaultBranch] // do not run PR branches
+			"tags-ignore": [_repo.releaseTagPattern]
 		}
 		pull_request: {}
 	}
@@ -52,7 +52,7 @@ workflows: trybot: _base.#bashWorkflow & {
 				_base.#earlyChecks & {
 					// These checks don't vary based on the Go version or OS,
 					// so we only need to run them on one of the matrix jobs.
-					if: "\(#_isLatestLinux)"
+					if: "\(_repo.isLatestLinux)"
 				},
 				_base.#cacheGoModules,
 				json.#step & {
@@ -80,7 +80,7 @@ workflows: trybot: _base.#bashWorkflow & {
 		run:  "go generate ./..."
 		// The Go version corresponds to the precise version specified in
 		// the matrix. Skip windows for now until we work out why re-gen is flaky
-		if: "\(#_isLatestLinux)"
+		if: "\(_repo.isLatestLinux)"
 	}
 
 	_#goTest: json.#step & {
@@ -95,7 +95,7 @@ workflows: trybot: _base.#bashWorkflow & {
 		// dependencies that vary wildly between platforms.
 		// For now, to save CI resources, just run the checks on one matrix job.
 		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
-		if:   "\(#_isLatestLinux)"
+		if:   "\(_repo.isLatestLinux)"
 		name: "Check"
 		run:  "go vet ./..."
 	}
