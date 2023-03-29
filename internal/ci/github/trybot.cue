@@ -15,21 +15,18 @@
 package github
 
 import (
+	"list"
+
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
 // The trybot workflow.
-workflows: trybot: _base.#bashWorkflow & {
-	// Note: the name of this workflow is used by gerritstatusupdater as an
-	// identifier in the status updates that are posted as reviews for this
-	// workflows, but also as the result label key, e.g. "TryBot-Result" would
-	// be the result label key for the "TryBot" workflow. Note the result label
-	// key is therefore tied to the configuration of this repository.
-	name: "TryBot"
+workflows: trybot: _repo.bashWorkflow & {
+	name: _repo.trybot.name
 
 	on: {
 		push: {
-			branches: ["trybot/*/*/*/*", _repo.defaultBranch, _base.#testDefaultBranch] // do not run PR branches
+			branches: list.Concat([["trybot/*/*", _repo.testDefaultBranch], _repo.protectedBranchPatterns]) // do not run PR branches
 			"tags-ignore": [_repo.releaseTagPattern]
 		}
 		pull_request: {}
@@ -40,23 +37,23 @@ workflows: trybot: _base.#bashWorkflow & {
 			strategy:  _testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
-				_base.#installGo,
-				_base.#checkoutCode & {
-					// "pull_request" builds will by default use a merge commit,
-					// testing the PR's HEAD merged on top of the master branch.
-					// For consistency with Gerrit, avoid that merge commit entirely.
-					// This doesn't affect "push" builds, which never used merge commits.
-					with: ref:        "${{ github.event.pull_request.head.sha }}"
-					with: submodules: true
-				},
-				_base.#earlyChecks & {
+				for v in _checkoutCode {v},
+
+				// Early git checks
+				_repo.earlyChecks & {
 					// These checks don't vary based on the Go version or OS,
 					// so we only need to run them on one of the matrix jobs.
-					if: "\(_repo.isLatestLinux)"
+					if: _repo.isLatestLinux
 				},
-				_base.#cacheGoModules,
+
+				_repo.installGo,
+
+				// cachePre must come after installing Node and Go, because the cache locations
+				// are established by running each tool.
+				for v in _goCaches {v},
+
 				json.#step & {
-					if:  "\(_base.#isDefaultBranch)"
+					if:  "\(_repo.isProtectedBranch)"
 					run: "echo CUE_LONG=true >> $GITHUB_ENV"
 				},
 				_goModVerify,
@@ -64,11 +61,11 @@ workflows: trybot: _base.#bashWorkflow & {
 				_goTest,
 				_goCheck,
 				_goTestRace & {
-					if: "${{ \(_base.#isDefaultBranch) }}"
+					if: "${{ \(_repo.isProtectedBranch) }}"
 				},
 				_staticcheck,
 				_goModTidy,
-				_base.#checkGitClean,
+				_repo.checkGitClean,
 				_installUnity,
 				_runUnity,
 			]
