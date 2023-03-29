@@ -29,14 +29,14 @@ import (
 // re-run and verify these steps as part of a the test suite that runs against
 // new CUE versions.
 
-// genworkflows regenerates the GitHub workflow Yaml definitions.
+_goos: string @tag(os,var=os)
+
+// gen.workflows regenerates the GitHub workflow Yaml definitions.
 //
 // See internal/ci/gen.go for details on how this step fits into the sequence
 // of generating our CI workflow definitions, and updating various txtar tests
 // with files from that process.
-command: genworkflows: {
-	_goos: string @tag(os,var=os)
-
+command: gen: workflows: {
 	for w in github.workflows {
 		"\(w.file)": file.Create & {
 			_dir:     path.FromSlash("../../.github/workflows", path.Unix)
