@@ -95,7 +95,7 @@ trybot: _base.#bashWorkflow & {
 		// dependencies that vary wildly between platforms.
 		// For now, to save CI resources, just run the checks on one matrix job.
 		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
-		if: "\(#_isLatestLinux)"
+		if:   "\(#_isLatestLinux)"
 		name: "Check"
 		run:  "go vet ./..."
 	}
@@ -117,6 +117,6 @@ trybot: _base.#bashWorkflow & {
 
 	_#staticcheck: json.#step & {
 		name: "staticcheck"
-		run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.3.3 ./..."
+		run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.4.3 ./..."
 	}
 }

@@ -62,11 +62,9 @@ _#releaseTagPattern: "v*"
 
 // Use the latest Go version for extra checks,
 // such as running tests with the data race detector.
-_#latestStableGo: "1.19.x"
+_#latestStableGo: "1.20.x"
 
-_#linuxMachine:   "ubuntu-20.04"
-_#macosMachine:   "macos-11"
-_#windowsMachine: "windows-2022"
+_#linuxMachine: "ubuntu-latest"
 
 // #_isLatestLinux evaluates to true if the job is running on Linux with the
 // latest version of Go. This expression is often used to run certain steps

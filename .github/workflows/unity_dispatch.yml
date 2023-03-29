@@ -5,7 +5,7 @@ name: Dispatch unity
   - repository_dispatch
 jobs:
   unity:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash

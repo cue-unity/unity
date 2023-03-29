@@ -26,7 +26,7 @@ import (
 // project which "vendors" the various workflow-related
 // packages can specify "cue" as the value so that unity
 // tests can specify the cmd/cue binary to use.
-_cueCmd: string | *"go run cuelang.org/go/cmd/cue@v0.4.3" @tag(cue_cmd)
+_cueCmd: string | *"go run cuelang.org/go/cmd/cue@v0.5.0-beta.5" @tag(cue_cmd)
 
 // For the commands below, note we use simple yet hacky path resolution, rather
 // than anything that might derive the module root using go list or similar, in
@@ -40,7 +40,7 @@ command: importjsonschema: {
 
 		// Tip link for humans:
 		// https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/github-workflow.json
-		url: "https://raw.githubusercontent.com/SchemaStore/schemastore/6fe4707b9d1c5d45cfc8d5b6d56968e65d2bdc38/src/schemas/json/github-workflow.json"
+		url: "https://raw.githubusercontent.com/SchemaStore/schemastore/5ffe36662a8fcab3c32e8fbca39c5253809e6913/src/schemas/json/github-workflow.json"
 	}
 	import: exec.Run & {
 		_outpath: path.FromSlash("../../cue.mod/pkg/github.com/SchemaStore/schemastore/src/schemas/json/github-workflow.cue", "unix")
