@@ -22,26 +22,17 @@ import (
 // cmd/cueckoo runtrybot. Therefore, the payload.cl payload will be
 // set, which is the identifying feature as far as this dispatch
 // is concerned, compared to unity_cli.
-workflows: unity_dispatch: _base.#bashWorkflow & {
-	_type:                 _gerrithub.#dispatchUnity
-	_branchNameExpression: "\(_type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}"
-	name:                   "Dispatch \(_type)"
+workflows: unity_dispatch: _repo.bashWorkflow & {
+	_branchNameExpression: "\(_repo.unity.key)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}"
+	name:                  "Dispatch \(_repo.unity.key)"
 	on: ["repository_dispatch"]
 	jobs: {
-		"\(_type)": {
-			"runs-on": _repo.linuxMachine
-			if:        "${{ github.event.client_payload.type == '\(_type)' && github.event.client_payload.payload.cl != null}}"
+		"\(_repo.unity.key)": {
+			if: "${{ github.event.client_payload.type == '\(_repo.unity.key)' && github.event.client_payload.payload.cl != null}}"
 			steps: [
-				// This workflow is triggered against the tip of the default branch.
-				// We want to create a branch named unity/$changeID/$revisionID
-				// and push that to the trybot repository to trigger the unity
-				// workflow. We need full history in order to be able to push
-				// to the unity-trybot repository.
-				_base.#checkoutCode & {
-					with: {
-						"fetch-depth": 0
-					}
-				},
+				// We do not need submodules in this workflow
+				for v in _repo.checkoutCode {v},
+
 				// Out of the entire ref (e.g. refs/changes/38/547738/7) we only
 				// care about the CL number and patchset, (e.g. 547738/7).
 				// Note that gerrithub_ref is two path elements.
@@ -53,13 +44,13 @@ workflows: unity_dispatch: _base.#bashWorkflow & {
 						"""#
 				},
 				json.#step & {
-					name: "Trigger \(_type)"
+					name: "Trigger \(_repo.unity.key)"
 					run:  """
-						git config user.name \(_gerrithub.#botGitHubUser)
-						git config user.email \(_gerrithub.#botGitHubUserEmail)
-						git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n \(_gerrithub.#botGitHubUser):${{ secrets.\(_gerrithub.#botGitHubUserTokenSecretsKey) }} | base64)"
+						git config user.name \(_repo.botGitHubUser)
+						git config user.email \(_repo.botGitHubUserEmail)
+						git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n \(_repo.botGitHubUser):${{ secrets.\(_repo.botGitHubUserTokenSecretsKey) }} | base64)"
 						git checkout -b \(_branchNameExpression)
-						git push \(_gerrithub.#trybotRepositoryURL) \(_branchNameExpression)
+						git push \(_repo.trybotRepositoryURL) \(_branchNameExpression)
 						"""
 				},
 			]
