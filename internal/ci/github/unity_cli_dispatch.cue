@@ -21,20 +21,22 @@ import (
 // unity_cli_dispatch is the "regular" repository dispatch triggered by
 // cmd/cueckkoo unity. This supplies arbitrary versions to be tested.
 // For such a trigger, the payload.cl field is null.
-workflows: unity_cli_dispatch: _base.#bashWorkflow & {
+workflows: unity_cli_dispatch: _repo.bashWorkflow & {
 	on: ["repository_dispatch"]
 	jobs: {
 		test: {
-			if:        "${{ github.event.client_payload.type == '\(_gerrithub.#dispatchUnity)' && github.event.client_payload.payload.cl == null }}"
-			strategy:  _testStrategy
-			"runs-on": "${{ matrix.os }}"
+			if: "${{ github.event.client_payload.type == '\(_repo.unity.key)' && github.event.client_payload.payload.cl == null }}"
 			steps: [
-				_base.#installGo,
-				_base.#checkoutCode & {
-					with: submodules: true
-				},
-				_base.#cacheGoModules,
+				for v in _checkoutCode {v},
+
+				_installGo,
+
+				// cachePre must come after installing Node and Go, because the cache locations
+				// are established by running each tool.
+				for v in _setupReadonlyGoActionsCaches {v},
+
 				_installUnity,
+
 				json.#step & {
 					name: "Run unity"
 					id:   "unity_run"
