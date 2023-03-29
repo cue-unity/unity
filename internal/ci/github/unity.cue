@@ -21,7 +21,7 @@ import (
 // unity is the workflow where triggered by cmd/cueckoo runtrybot for a CUE
 // project CL. This workflow runs in the trybot repo, and webhook events update
 // the source CUE project CL.
-workflows: unity: _base.#bashWorkflow & {
+workflows: unity: _repo.bashWorkflow & {
 	name: "Unity"
 
 	on: {
@@ -32,16 +32,18 @@ workflows: unity: _base.#bashWorkflow & {
 
 	jobs: {
 		test: {
-			strategy:          _testStrategy
 			"timeout-minutes": 15
-			"runs-on":         "${{ matrix.os }}"
 			steps: [
-				_base.#installGo,
-				_base.#checkoutCode & {
-					with: submodules: true
-				},
-				_base.#cacheGoModules,
+				for v in _checkoutCode {v},
+
+				_installGo,
+
+				// cachePre must come after installing Node and Go, because the cache locations
+				// are established by running each tool.
+				for v in _setupReadonlyGoActionsCaches {v},
+
 				_installUnity,
+
 				json.#step & {
 					name: "Run unity"
 					run: """
