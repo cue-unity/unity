@@ -26,7 +26,7 @@ workflows: unity_cli_dispatch: _base.#bashWorkflow & {
 	jobs: {
 		test: {
 			if:        "${{ github.event.client_payload.type == '\(_gerrithub.#dispatchUnity)' && github.event.client_payload.payload.cl == null }}"
-			strategy:  _#testStrategy
+			strategy:  _testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
 				_base.#installGo,
@@ -34,7 +34,7 @@ workflows: unity_cli_dispatch: _base.#bashWorkflow & {
 					with: submodules: true
 				},
 				_base.#cacheGoModules,
-				_#installUnity,
+				_installUnity,
 				json.#step & {
 					name: "Run unity"
 					id:   "unity_run"
