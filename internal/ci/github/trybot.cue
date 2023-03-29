@@ -19,7 +19,7 @@ import (
 )
 
 // The trybot workflow.
-trybot: _base.#bashWorkflow & {
+workflows: trybot: _base.#bashWorkflow & {
 	// Note: the name of this workflow is used by gerritstatusupdater as an
 	// identifier in the status updates that are posted as reviews for this
 	// workflows, but also as the result label key, e.g. "TryBot-Result" would
@@ -95,7 +95,7 @@ trybot: _base.#bashWorkflow & {
 		// dependencies that vary wildly between platforms.
 		// For now, to save CI resources, just run the checks on one matrix job.
 		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
-		if: "\(#_isLatestLinux)"
+		if:   "\(#_isLatestLinux)"
 		name: "Check"
 		run:  "go vet ./..."
 	}

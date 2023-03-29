@@ -21,7 +21,7 @@ import (
 // unity is the workflow where triggered by cmd/cueckoo runtrybot for a CUE
 // project CL. This workflow runs in the trybot repo, and webhook events update
 // the source CUE project CL.
-unity: _base.#bashWorkflow & {
+workflows: unity: _base.#bashWorkflow & {
 	name: "Unity"
 
 	on: {

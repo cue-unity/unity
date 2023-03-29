@@ -22,37 +22,34 @@ import (
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
-workflows: [...{file: string, schema: (json.#Workflow & {})}]
-workflows: [
-	{
-		// Note: the name of the file corresponds to the environment variable
-		// names for gerritstatusupdater. Therefore, this filename must only be
-		// change in combination with also updating the environment in which
-		// gerritstatusupdater is running for this repository.
-		file:   "trybot.yml"
-		schema: trybot
-	},
-	{
-		file:   "daily_check.yml"
-		schema: daily_check
-	},
-	{
-		file:   "trybot_dispatch.yml"
-		schema: trybot_dispatch
-	},
-	{
-		file:   "unity.yml"
-		schema: unity
-	},
-	{
-		file:   "unity_dispatch.yml"
-		schema: unity_dispatch
-	},
-	{
-		file:   "unity_cli_dispatch.yml"
-		schema: unity_cli_dispatch
-	},
-]
+// Note: the name of the workflows (and hence the corresponding .yml filenames)
+// correspond to the environment variable names for gerritstatusupdater.
+// Therefore, this filename must only be change in combination with also
+// updating the environment in which gerritstatusupdater is running for this
+// repository.
+//
+// This name is also used by the CI badge in the top-level README.
+//
+// This name is also used in the evict_caches lookups.
+//
+// i.e. don't change the names of workflows!
+//
+// In addition to separately declaring the workflows themselves, we define the
+// shape of #workflows here as a cross-check that we don't accidentally change
+// the name of workflows without reading this comment.
+//
+// We explicitly use close() here instead of a definition in order that we can
+// cue export the github package as a test.
+workflows: close({
+	[string]: json.#Workflow
+
+	trybot:             _
+	daily_check:        _
+	trybot_dispatch:    _
+	unity:              _
+	unity_dispatch:     _
+	unity_cli_dispatch: _
+})
 
 // TODO: _#repositoryURL should be extracted from codereview.cfg
 _#repositoryURL: "https://github.com/cue-unity/unity"
