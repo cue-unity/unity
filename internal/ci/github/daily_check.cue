@@ -23,15 +23,15 @@ workflows: daily_check: _base.#bashWorkflow & {
 
 	jobs: {
 		test: {
-			strategy:  _#testStrategy
+			strategy:  _testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
 				_base.#installGo,
 				_base.#checkoutCode & {
 					with: submodules: true
 				},
-				_#installUnity,
-				_#runUnity,
+				_installUnity,
+				_runUnity,
 			]
 		}
 	}

@@ -51,7 +51,7 @@ workflows: close({
 	unity_cli_dispatch: _
 })
 
-_#testStrategy: {
+_testStrategy: {
 	"fail-fast": false
 	matrix: {
 		"go-version": [_repo.latestStableGo]

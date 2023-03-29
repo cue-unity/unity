@@ -37,7 +37,7 @@ workflows: trybot: _base.#bashWorkflow & {
 
 	jobs: {
 		test: {
-			strategy:  _#testStrategy
+			strategy:  _testStrategy
 			"runs-on": "${{ matrix.os }}"
 			steps: [
 				_base.#installGo,
@@ -59,23 +59,23 @@ workflows: trybot: _base.#bashWorkflow & {
 					if:  "\(_base.#isDefaultBranch)"
 					run: "echo CUE_LONG=true >> $GITHUB_ENV"
 				},
-				_#goModVerify,
-				_#goGenerate,
-				_#goTest,
-				_#goCheck,
-				_#goTestRace & {
+				_goModVerify,
+				_goGenerate,
+				_goTest,
+				_goCheck,
+				_goTestRace & {
 					if: "${{ \(_base.#isDefaultBranch) }}"
 				},
-				_#staticcheck,
-				_#goModTidy,
+				_staticcheck,
+				_goModTidy,
 				_base.#checkGitClean,
-				_#installUnity,
-				_#runUnity,
+				_installUnity,
+				_runUnity,
 			]
 		}
 	}
 
-	_#goGenerate: json.#step & {
+	_goGenerate: json.#step & {
 		name: "Generate"
 		run:  "go generate ./..."
 		// The Go version corresponds to the precise version specified in
@@ -83,12 +83,12 @@ workflows: trybot: _base.#bashWorkflow & {
 		if: "\(_repo.isLatestLinux)"
 	}
 
-	_#goTest: json.#step & {
+	_goTest: json.#step & {
 		name: "Test"
 		run:  "go test ./..."
 	}
 
-	_#goCheck: json.#step & {
+	_goCheck: json.#step & {
 		// These checks can vary between platforms, as different code can be built
 		// based on GOOS and GOARCH build tags.
 		// However, CUE does not have any such build tags yet, and we don't use
@@ -100,22 +100,22 @@ workflows: trybot: _base.#bashWorkflow & {
 		run:  "go vet ./..."
 	}
 
-	_#goTestRace: json.#step & {
+	_goTestRace: json.#step & {
 		name: "Test with -race"
 		run:  "go test -race ./..."
 	}
 
-	_#goModVerify: json.#step & {
+	_goModVerify: json.#step & {
 		name: "go mod verify"
 		run:  "go mod verify"
 	}
 
-	_#goModTidy: json.#step & {
+	_goModTidy: json.#step & {
 		name: "go mod tidy"
 		run:  "go mod tidy"
 	}
 
-	_#staticcheck: json.#step & {
+	_staticcheck: json.#step & {
 		name: "staticcheck"
 		run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.4.3 ./..."
 	}
