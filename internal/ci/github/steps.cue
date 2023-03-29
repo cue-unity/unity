@@ -27,3 +27,28 @@ _runUnity: json.#step & {
 	name: "Run unity"
 	run:  "./_scripts/runUnity.sh"
 }
+
+_installGo: _repo.installGo & {
+	with: "go-version": _repo.latestStableGo
+}
+
+// _setupGoActionsCaches is shared between trybot and update_tip.
+_setupGoActionsCaches: _repo.setupGoActionsCaches & {
+	#goVersion: _installGo.with."go-version"
+
+	// Unfortunate that we need to hardcode here. Ideally we would be able to derive
+	// the OS from the runner. i.e. from _linuxWorkflow somehow.
+	#os: "Linux"
+
+	_
+}
+
+_setupReadonlyGoActionsCaches: _setupGoActionsCaches & {
+	#readonly: true
+	_
+}
+
+_checkoutCode: _repo.checkoutCode & {
+	#actionsCheckout: with: submodules: true
+	_
+}
