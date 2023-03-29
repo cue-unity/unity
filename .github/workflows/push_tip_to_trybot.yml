@@ -1,0 +1,49 @@
+# Code generated internal/ci/ci_tool.cue; DO NOT EDIT.
+
+name: Push tip to trybot
+"on":
+  push:
+    branches:
+      - master
+concurrency: push_tip_to_trybot
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    if: ${{github.repository == 'cue-unity/unity'}}
+    steps:
+      - name: Write netrc file for cueckoo Gerrithub
+        run: |-
+          cat <<EOD > ~/.netrc
+          machine review.gerrithub.io
+          login porcuepine
+          password ${{ secrets.PORCUEPINE_GERRITHUB_PASSWORD }}
+          EOD
+          chmod 600 ~/.netrc
+      - name: Push tip to trybot
+        run: |-
+          mkdir tmpgit
+          cd tmpgit
+          git init
+          git config user.name porcuepine
+          git config user.email porcuepine@gmail.com
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n porcuepine:${{ secrets.PORCUEPINE_GITHUB_PAT }} | base64)"
+          git remote add origin https://review.gerrithub.io/a/cue-unity/unity
+          git remote add trybot https://github.com/cue-unity/unity-trybot
+          git fetch origin "${{ github.ref }}"
+
+          success=false
+          for try in {1..20}; do
+          	 echo "Push to trybot try $try"
+          	 if git push -f trybot "FETCH_HEAD:${{ github.ref }}"; then
+          		  success=true
+          		  break
+          	 fi
+          	 sleep 1
+          done
+          if ! $success; then
+          	 echo "Giving up"
+          	 exit 1
+          fi

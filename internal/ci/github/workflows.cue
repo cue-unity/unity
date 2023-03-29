@@ -16,9 +16,6 @@
 package github
 
 import (
-	"github.com/cue-unity/unity/internal/ci/base"
-	"github.com/cue-unity/unity/internal/ci/gerrithub"
-
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
@@ -43,9 +40,10 @@ import (
 workflows: close({
 	[string]: json.#Workflow
 
-	trybot:             _
+	(_repo.trybot.key): _
+	trybot_dispatch:    _repo.trybotDispatchWorkflow
+	push_tip_to_trybot: _repo.pushTipToTrybotWorkflow
 	daily_check:        _
-	trybot_dispatch:    _
 	unity:              _
 	unity_dispatch:     _
 	unity_cli_dispatch: _
@@ -59,27 +57,9 @@ _testStrategy: {
 	}
 }
 
-// _gerrithub is an instance of ./gerrithub, parameterised by the properties of
-// this project
-_gerrithub: gerrithub & {
-	#repositoryURL:                      _repo.repositoryURL
-	#botGitHubUser:                      "porcuepine"
-	#botGitHubUserTokenSecretsKey:       "PORCUEPINE_GITHUB_PAT"
-	#botGitHubUserEmail:                 "porcuepine@gmail.com"
-	#botGerritHubUser:                   #botGitHubUser
-	#botGerritHubUserPasswordSecretsKey: "PORCUEPINE_GERRITHUB_PASSWORD"
-	#botGerritHubUserEmail:              #botGitHubUserEmail
-}
+_goCaches: _repo.setupGoActionsCaches & {#protectedBranchExpr: _repo.isProtectedBranch, _}
 
-// _base is an instance of ./base, parameterised by the properties of this
-// project
-//
-// TODO: revisit the naming strategy here. _base and base are very similar.
-// Perhaps rename the import to something more obviously not intended to be
-// used, and then rename the field base?
-_base: base & {
-	#repositoryURL:                "https://github.com/cue-lang/cue"
-	#defaultBranch:                _repo.defaultBranch
-	#botGitHubUser:                "porcuepine"
-	#botGitHubUserTokenSecretsKey: "PORCUEPINE_GITHUB_PAT"
+_checkoutCode: _repo.checkoutCode & {
+	#actionsCheckout: with: submodules: true
+	_
 }
