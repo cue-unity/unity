@@ -14,7 +14,7 @@
 
 package github
 
-workflows: daily_check: _base.#bashWorkflow & {
+workflows: daily_check: _repo.bashWorkflow & {
 
 	name: "Daily check"
 	on: {
@@ -23,13 +23,15 @@ workflows: daily_check: _base.#bashWorkflow & {
 
 	jobs: {
 		test: {
-			strategy:  _testStrategy
-			"runs-on": "${{ matrix.os }}"
 			steps: [
-				_base.#installGo,
-				_base.#checkoutCode & {
-					with: submodules: true
-				},
+				for v in _checkoutCode {v},
+
+				_installGo,
+
+				// cachePre must come after installing Node and Go, because the cache locations
+				// are established by running each tool.
+				for v in _setupReadonlyGoActionsCaches {v},
+
 				_installUnity,
 				_runUnity,
 			]
