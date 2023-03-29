@@ -14,7 +14,7 @@
 
 package github
 
-daily_check: _base.#bashWorkflow & {
+workflows: daily_check: _base.#bashWorkflow & {
 
 	name: "Daily check"
 	on: {

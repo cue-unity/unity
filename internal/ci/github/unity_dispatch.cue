@@ -22,7 +22,7 @@ import (
 // cmd/cueckoo runtrybot. Therefore, the payload.cl payload will be
 // set, which is the identifying feature as far as this dispatch
 // is concerned, compared to unity_cli.
-unity_dispatch: _base.#bashWorkflow & {
+workflows: unity_dispatch: _base.#bashWorkflow & {
 	_#type:                 _gerrithub.#dispatchUnity
 	_#branchNameExpression: "\(_#type)/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}"
 	name:                   "Dispatch \(_#type)"

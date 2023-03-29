@@ -21,7 +21,7 @@ import (
 // unity_cli_dispatch is the "regular" repository dispatch triggered by
 // cmd/cueckkoo unity. This supplies arbitrary versions to be tested.
 // For such a trigger, the payload.cl field is null.
-unity_cli_dispatch: _base.#bashWorkflow & {
+workflows: unity_cli_dispatch: _base.#bashWorkflow & {
 	on: ["repository_dispatch"]
 	jobs: {
 		test: {
