@@ -15,13 +15,6 @@
 // package github declares the workflows for this project.
 package github
 
-import (
-	"github.com/cue-unity/unity/internal/ci/base"
-	"github.com/cue-unity/unity/internal/ci/gerrithub"
-
-	"github.com/SchemaStore/schemastore/src/schemas/json"
-)
-
 // Note: the name of the workflows (and hence the corresponding .yml filenames)
 // correspond to the environment variable names for gerritstatusupdater.
 // Therefore, this filename must only be change in combination with also
@@ -41,45 +34,20 @@ import (
 // We explicitly use close() here instead of a definition in order that we can
 // cue export the github package as a test.
 workflows: close({
-	[string]: json.#Workflow
+	// Adding this constraint here, whilst clear for the reader,
+	// blows out evaluation time. This will be fixed as part of
+	// the performance work which is covered under various issues.
+	// [string]: json.#Workflow
 
-	trybot:             _
-	daily_check:        _
-	trybot_dispatch:    _
-	unity:              _
-	unity_dispatch:     _
-	unity_cli_dispatch: _
+	_repo.trybotWorkflows
+
+	trybot:             _linuxWorkflow
+	daily_check:        _linuxWorkflow
+	unity:              _linuxWorkflow
+	unity_dispatch:     _linuxWorkflow
+	unity_cli_dispatch: _linuxWorkflow
 })
 
-_testStrategy: {
-	"fail-fast": false
-	matrix: {
-		"go-version": [_repo.latestStableGo]
-		os: [_repo.linuxMachine]
-	}
-}
-
-// _gerrithub is an instance of ./gerrithub, parameterised by the properties of
-// this project
-_gerrithub: gerrithub & {
-	#repositoryURL:                      _repo.repositoryURL
-	#botGitHubUser:                      "porcuepine"
-	#botGitHubUserTokenSecretsKey:       "PORCUEPINE_GITHUB_PAT"
-	#botGitHubUserEmail:                 "porcuepine@gmail.com"
-	#botGerritHubUser:                   #botGitHubUser
-	#botGerritHubUserPasswordSecretsKey: "PORCUEPINE_GERRITHUB_PASSWORD"
-	#botGerritHubUserEmail:              #botGitHubUserEmail
-}
-
-// _base is an instance of ./base, parameterised by the properties of this
-// project
-//
-// TODO: revisit the naming strategy here. _base and base are very similar.
-// Perhaps rename the import to something more obviously not intended to be
-// used, and then rename the field base?
-_base: base & {
-	#repositoryURL:                "https://github.com/cue-lang/cue"
-	#defaultBranch:                _repo.defaultBranch
-	#botGitHubUser:                "porcuepine"
-	#botGitHubUserTokenSecretsKey: "PORCUEPINE_GITHUB_PAT"
+_linuxWorkflow: {
+	jobs: [string]: "runs-on": _repo.linuxMachine
 }
