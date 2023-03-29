@@ -51,35 +51,18 @@ workflows: close({
 	unity_cli_dispatch: _
 })
 
-// TODO: _#repositoryURL should be extracted from codereview.cfg
-_#repositoryURL: "https://github.com/cue-unity/unity"
-
-_#defaultBranch:     "main"
-_#releaseTagPattern: "v*"
-
-// Use the latest Go version for extra checks,
-// such as running tests with the data race detector.
-_#latestStableGo: "1.20.x"
-
-_#linuxMachine: "ubuntu-latest"
-
-// #_isLatestLinux evaluates to true if the job is running on Linux with the
-// latest version of Go. This expression is often used to run certain steps
-// just once per CI workflow, to avoid duplicated work.
-#_isLatestLinux: "matrix.go-version == '\(_#latestStableGo)' && matrix.os == '\(_#linuxMachine)'"
-
 _#testStrategy: {
 	"fail-fast": false
 	matrix: {
-		"go-version": [_#latestStableGo]
-		os: [_#linuxMachine]
+		"go-version": [_repo.latestStableGo]
+		os: [_repo.linuxMachine]
 	}
 }
 
 // _gerrithub is an instance of ./gerrithub, parameterised by the properties of
 // this project
 _gerrithub: gerrithub & {
-	#repositoryURL:                      _#repositoryURL
+	#repositoryURL:                      _repo.repositoryURL
 	#botGitHubUser:                      "porcuepine"
 	#botGitHubUserTokenSecretsKey:       "PORCUEPINE_GITHUB_PAT"
 	#botGitHubUserEmail:                 "porcuepine@gmail.com"
@@ -96,7 +79,7 @@ _gerrithub: gerrithub & {
 // used, and then rename the field base?
 _base: base & {
 	#repositoryURL:                "https://github.com/cue-lang/cue"
-	#defaultBranch:                _#defaultBranch
+	#defaultBranch:                _repo.defaultBranch
 	#botGitHubUser:                "porcuepine"
 	#botGitHubUserTokenSecretsKey: "PORCUEPINE_GITHUB_PAT"
 }
