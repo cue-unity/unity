@@ -36,3 +36,5 @@ jobs:
           git remote add origin https://github.com/cue-unity/unity-trybot
           git fetch origin "${{ github.event.client_payload.payload.branch }}"
           git push origin trybot/${{ github.event.client_payload.payload.changeID }}/${{ github.event.client_payload.payload.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}
+          echo ${{ secrets.CUECKOO_GITHUB_PAT }} | gh auth login --with-token
+          gh pr --repo=https://github.com/cue-unity/unity-trybot create --base="${{ github.event.client_payload.payload.branch }}" --fill
