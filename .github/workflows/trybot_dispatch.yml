@@ -11,7 +11,7 @@ jobs:
         shell: bash
     if: ${{ github.event.client_payload.type == 'trybot' }}
     steps:
-      - name: Write netrc file for cueckoo Gerrithub
+      - name: Write netrc file for porcuepine Gerrithub
         run: |-
           cat <<EOD > ~/.netrc
           machine review.gerrithub.io
@@ -36,5 +36,5 @@ jobs:
           git remote add origin https://github.com/cue-unity/unity-trybot
           git fetch origin "${{ github.event.client_payload.payload.branch }}"
           git push origin trybot/${{ github.event.client_payload.payload.changeID }}/${{ github.event.client_payload.payload.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}
-          echo ${{ secrets.CUECKOO_GITHUB_PAT }} | gh auth login --with-token
+          echo ${{ secrets.PORCUEPINE_GITHUB_PAT }} | gh auth login --with-token
           gh pr --repo=https://github.com/cue-unity/unity-trybot create --base="${{ github.event.client_payload.payload.branch }}" --fill
