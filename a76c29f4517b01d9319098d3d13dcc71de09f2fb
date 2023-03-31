@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4cda57ab_f64e0131",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-03-31T23:44:39Z",
+      "side": 1,
+      "message": "So bad is this bug that we won\u0027t be able to trigger the trybots 😞\n\nSo we\u0027ll have to revert to privilege escalating to submit.",
+      "revId": "a76c29f4517b01d9319098d3d13dcc71de09f2fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
