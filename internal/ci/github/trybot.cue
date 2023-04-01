@@ -34,6 +34,8 @@ workflows: trybot: _repo.bashWorkflow & {
 
 	jobs: {
 		test: {
+			if: "\(_repo.containsTrybotTrailer) || ! \(_repo.containsDispatchTrailer)"
+
 			steps: [
 				for v in _checkoutCode {v},
 
@@ -60,7 +62,9 @@ workflows: trybot: _repo.bashWorkflow & {
 				_staticcheck,
 				_goModTidy,
 				_repo.checkGitClean,
-				_installUnity,
+				_installUnity & {
+					env: PROXY_INSTALL: "${{ \(_repo.isProtectedBranch) }}"
+				},
 				_runUnity,
 			]
 		}

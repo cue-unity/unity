@@ -15,6 +15,10 @@ jobs:
     defaults:
       run:
         shell: bash
+    if: |-
+      (contains(github.event.head_commit.message, '
+      Dispatch-Trailer: {"type":"trybot"')) || ! (contains(github.event.head_commit.message, '
+      Dispatch-Trailer: {"type":"'))
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -26,6 +30,35 @@ jobs:
         run: touch -t 202211302355 $(find * -type d)
       - name: Restore git file modification times
         uses: chetan/git-restore-mtime-action@075f9bc9d159805603419d50f794bd9f33252ebe
+      - id: DispatchTrailer
+        name: Try to extract Dispatch-Trailer
+        run: |-
+          x="$(git log -1 --pretty='%(trailers:key=Dispatch-Trailer,valueonly)')"
+          if [[ "$x" == "" ]]
+          then
+              x=null
+          fi
+          echo "x is $x"
+          echo "value<<EOD" >> $GITHUB_OUTPUT
+          echo "$x" >> $GITHUB_OUTPUT
+          echo "EOD" >> $GITHUB_OUTPUT
+      - if: |-
+          ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"')))) && (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))
+        name: Check we don't have Dispatch-Trailer on a protected branch
+        run: |-
+          echo "github.event.head_commit.message contains Dispatch-Trailer"
+          echo "github.event.head_commit.message value"
+          cat <<EOD
+          ${{ github.event.head_commit.message }}
+          EOD
+          echo "containsDispatchTrailer expression"
+          cat <<EOD
+          (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))
+          EOD
+          false
       - name: Early git and code sanity checks
         run: |-
           # Ensure the recent commit messages have Signed-off-by headers.
@@ -90,7 +123,9 @@ jobs:
       - id: go-cache-dir
         name: Get go build/test cache directory
         run: echo "dir=$(go env GOCACHE)" >> ${GITHUB_OUTPUT}
-      - if: (github.ref == 'refs/heads/main')
+      - if: |-
+          ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))))
         uses: actions/cache@v3
         with:
           path: |-
@@ -98,7 +133,9 @@ jobs:
             ${{ steps.go-cache-dir.outputs.dir }}
           key: Linux-1.20.x-${{ github.run_id }}
           restore-keys: Linux-1.20.x
-      - if: '! (github.ref == ''refs/heads/main'')'
+      - if: |-
+          ! ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))))
         uses: actions/cache/restore@v3
         with:
           path: |-
@@ -106,9 +143,13 @@ jobs:
             ${{ steps.go-cache-dir.outputs.dir }}
           key: Linux-1.20.x-${{ github.run_id }}
           restore-keys: Linux-1.20.x
-      - if: github.repository == 'cue-unity/unity' && ((github.ref == 'refs/heads/main') || github.ref == 'refs/heads/ci/test')
+      - if: |-
+          github.repository == 'cue-unity/unity' && (((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"')))) || github.ref == 'refs/heads/ci/test')
         run: go clean -testcache
-      - if: (github.ref == 'refs/heads/main')
+      - if: |-
+          ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))))
         run: echo CUE_LONG=true >> $GITHUB_ENV
       - name: go mod verify
         run: go mod verify
@@ -118,7 +159,9 @@ jobs:
         run: go test ./...
       - name: Check
         run: go vet ./...
-      - if: ${{ (github.ref == 'refs/heads/main') }}
+      - if: |-
+          ${{ ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"')))) }}
         name: Test with -race
         run: go test -race ./...
       - name: staticcheck
@@ -129,5 +172,9 @@ jobs:
         run: test -z "$(git status --porcelain)" || (git status; git diff; false)
       - name: Install unity
         run: ./_scripts/installUnity.sh
+        env:
+          PROXY_INSTALL: |-
+            ${{ ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+            Dispatch-Trailer: {"type":"')))) }}
       - name: Run unity
         run: ./_scripts/runUnity.sh
