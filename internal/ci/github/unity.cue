@@ -15,6 +15,8 @@
 package github
 
 import (
+	"list"
+
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
@@ -26,12 +28,18 @@ workflows: unity: _repo.bashWorkflow & {
 
 	on: {
 		push: {
-			branches: ["unity/*/*/*/*"] // only run on unity build branches
+			branches: list.Concat([
+					// [_repo.testDefaultBranch],
+					_repo.protectedBranchPatterns,
+			])        // do not run PR branches
+			"tags-ignore": [_repo.releaseTagPattern]
 		}
 	}
 
 	jobs: {
 		test: {
+			if: "\(_repo.containsUnityTrailer)"
+
 			"timeout-minutes": 15
 			steps: [
 				for v in _checkoutCode {v},
