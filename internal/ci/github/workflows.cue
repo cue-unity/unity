@@ -41,7 +41,8 @@ workflows: close({
 
 	_repo.trybotWorkflows
 
-	trybot:             _linuxWorkflow
+	trybot: _linuxWorkflow
+	trybot_dispatch: #dummyDispatch: dummyDispatch
 	daily_check:        _linuxWorkflow
 	unity:              _linuxWorkflow
 	unity_dispatch:     _linuxWorkflow
@@ -50,4 +51,9 @@ workflows: close({
 
 _linuxWorkflow: {
 	jobs: [string]: "runs-on": _repo.linuxMachine
+}
+
+dummyDispatch: _repo.#dispatch & {
+	type: _repo.trybot.key
+	CL:   552050
 }
