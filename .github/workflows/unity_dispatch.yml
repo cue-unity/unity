@@ -2,15 +2,35 @@
 
 name: Dispatch unity
 "on":
-  - repository_dispatch
+  repository_dispatch: {}
+  push:
+    branches:
+      - ci/test
 jobs:
   unity:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-    if: ${{ github.event.client_payload.type == 'unity' && github.event.client_payload.payload.cl != null}}
+    if: ${{ github.ref == 'refs/heads/ci/test' || github.event.client_payload.type == 'unity' }}
     steps:
+      - name: Write netrc file for porcuepine Gerrithub
+        run: |-
+          cat <<EOD > ~/.netrc
+          machine review.gerrithub.io
+          login porcuepine
+          password ${{ secrets.PORCUEPINE_GERRITHUB_PASSWORD }}
+          EOD
+          chmod 600 ~/.netrc
+      - id: payload
+        if: github.repository == 'cue-unity/unity' && github.ref == 'refs/heads/ci/test'
+        name: Write fake payload
+        run: |-
+          cat <<EOD >> $GITHUB_OUTPUT
+          value<<DOE
+          {"type":"unity","CL":551352,"patchset":139,"targetBranch":"master","ref":"refs/changes/52/551352/139"}
+          DOE
+          EOD
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -20,14 +40,124 @@ jobs:
         run: touch -t 202211302355 $(find * -type d)
       - name: Restore git file modification times
         uses: chetan/git-restore-mtime-action@075f9bc9d159805603419d50f794bd9f33252ebe
-      - id: gerrithub_ref
+      - id: DispatchTrailer
+        name: Try to extract Dispatch-Trailer
         run: |-
-          ref="$(echo ${{github.event.client_payload.payload.cl.ref}} | sed -E 's/^refs\/changes\/[0-9]+\/([0-9]+)\/([0-9]+).*/\1\/\2/')"
-          echo "gerrithub_ref=$ref" >> $GITHUB_OUTPUT
-      - name: Trigger unity
+          x="$(git log -1 --pretty='%(trailers:key=Dispatch-Trailer,valueonly)')"
+          if [[ "$x" == "" ]]
+          then
+              x=null
+          fi
+          echo "x is $x"
+          echo "value<<EOD" >> $GITHUB_OUTPUT
+          echo "$x" >> $GITHUB_OUTPUT
+          echo "EOD" >> $GITHUB_OUTPUT
+      - if: |-
+          ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"')))) && (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))
+        name: Check we don't have Dispatch-Trailer on a protected branch
         run: |-
+          echo "github.event.head_commit.message contains Dispatch-Trailer"
+          echo "github.event.head_commit.message value"
+          cat <<EOD
+          ${{ github.event.head_commit.message }}
+          EOD
+          echo "containsDispatchTrailer expression"
+          cat <<EOD
+          (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))
+          EOD
+          false
+      - if: github.event.client_payload.type != 'unity'
+        name: Trigger Unity (fake data)
+        run: |-
+          set -x
+
+          # We already have the code checked out at the right place.
+          # Just need to add the Dispatch-Trailer Note that what we
+          # will have checked out here is the tip of the default
+          # branch.
+
           git config user.name porcuepine
           git config user.email porcuepine@gmail.com
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n porcuepine:${{ secrets.PORCUEPINE_GITHUB_PAT }} | base64)"
-          git checkout -b unity/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}
-          git push https://github.com/cue-unity/unity-trybot unity/${{ github.event.client_payload.payload.cl.changeID }}/${{ github.event.client_payload.payload.cl.commit }}/${{ steps.gerrithub_ref.outputs.gerrithub_ref }}
+
+          # Error if we already have dispatchTrailer according to git log logic.
+          x="$(git log -1 --pretty='%(trailers:key=Dispatch-Trailer,valueonly)')"
+          if [ "$x" != "" ]
+          then
+          	 echo "Ref ${{ fromJSON(steps.payload.outputs.value).ref }} already has a Dispatch-Trailer"
+          	 exit 1
+          fi
+
+          # Add the trailer because we don't have it yet. GitHub expressions do not have a
+          # substitute or quote capability. So we do that in shell. We also strip out the
+          # indenting added by toJSON. We ensure that the type field is first in order
+          # that we can safely check for specific types of dispatch trailer.
+          trailer="$(cat <<EOD | jq -c '{type} + .'
+          ${{ toJSON(fromJSON(steps.payload.outputs.value)) }}
+          EOD
+          )"
+          git log -1 --format=%B | git interpret-trailers --trailer "Dispatch-Trailer: $trailer" | git commit --amend -F -
+          git log -1
+
+          success=false
+          for try in {1..20}; do
+          	echo "Push to trybot try $try"
+          	if git push -f https://github.com/cue-unity/unity-trybot HEAD:main; then
+          		success=true
+          		break
+          	fi
+          	sleep 1
+          done
+          if ! $success; then
+          	echo "Giving up"
+          	exit 1
+          fi
+      - if: github.event.client_payload.type == 'unity'
+        name: Trigger Unity (repository_dispatch payload)
+        run: |-
+          set -x
+
+          # We already have the code checked out at the right place.
+          # Just need to add the Dispatch-Trailer Note that what we
+          # will have checked out here is the tip of the default
+          # branch.
+
+          git config user.name porcuepine
+          git config user.email porcuepine@gmail.com
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n porcuepine:${{ secrets.PORCUEPINE_GITHUB_PAT }} | base64)"
+
+          # Error if we already have dispatchTrailer according to git log logic.
+          x="$(git log -1 --pretty='%(trailers:key=Dispatch-Trailer,valueonly)')"
+          if [ "$x" != "" ]
+          then
+          	 echo "Ref ${{ github.event.client_payload.ref }} already has a Dispatch-Trailer"
+          	 exit 1
+          fi
+
+          # Add the trailer because we don't have it yet. GitHub expressions do not have a
+          # substitute or quote capability. So we do that in shell. We also strip out the
+          # indenting added by toJSON. We ensure that the type field is first in order
+          # that we can safely check for specific types of dispatch trailer.
+          trailer="$(cat <<EOD | jq -c '{type} + .'
+          ${{ toJSON(github.event.client_payload) }}
+          EOD
+          )"
+          git log -1 --format=%B | git interpret-trailers --trailer "Dispatch-Trailer: $trailer" | git commit --amend -F -
+          git log -1
+
+          success=false
+          for try in {1..20}; do
+          	echo "Push to trybot try $try"
+          	if git push -f https://github.com/cue-unity/unity-trybot HEAD:main; then
+          		success=true
+          		break
+          	fi
+          	sleep 1
+          done
+          if ! $success; then
+          	echo "Giving up"
+          	exit 1
+          fi

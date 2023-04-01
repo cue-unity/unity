@@ -6,7 +6,9 @@ set -eu
 cd "$( command cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/../"
 commit=$(git rev-parse HEAD)
 export GOBIN=$PWD/.bin
-if [ "${GITHUB_REF:-}" == "refs/heads/main" ]
+
+# See the logic for determining PROXY_INSTALL in trybot.cue
+if [ "${PROXY_INSTALL:-}" == "true" ]
 then
 	go install github.com/cue-unity/unity/cmd/unity@$commit
 else
