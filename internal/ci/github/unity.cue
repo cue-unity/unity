@@ -32,6 +32,8 @@ workflows: unity: _repo.bashWorkflow & {
 
 	jobs: {
 		test: {
+			if: "\(_repo.containsUnityTrailer)"
+
 			"timeout-minutes": 15
 			steps: [
 				for v in _checkoutCode {v},
@@ -47,15 +49,6 @@ workflows: unity: _repo.bashWorkflow & {
 				json.#step & {
 					name: "Run unity"
 					run: """
-						# GITHUB_REF is in the form of:
-						# "refs/heads/unity/$change_id/$commit/$cl_number/$ps_number".
-						# When a user runs "cueckoo runtrybot", it triggers a
-						# repository dispatch on the main unity repository,
-						# which then pushes the branch unity/... to the
-						# cue-trybot repository, triggering the workflow here.
-						# The commit (the third element) is enough to do a git fetch.
-						commit=$(echo $GITHUB_REF | cut -d "/" -f 5)
-
 						dir_head=$PWD/checkout_head
 						dir_parent=$PWD/checkout_parent
 
@@ -65,7 +58,7 @@ workflows: unity: _repo.bashWorkflow & {
 						mkdir $dir_head
 						cd $dir_head
 						git init
-						git fetch --depth=2 https://review.gerrithub.io/cue-lang/cue ${commit}
+						git fetch --depth=2 https://review.gerrithub.io/cue-lang/cue ${{ fromJSON(steps.DispatchTrailer.outputs.value).ref }}
 						cp -r $dir_head $dir_parent
 
 						# Switch into the HEAD commit and show it.
