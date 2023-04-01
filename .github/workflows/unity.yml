@@ -4,13 +4,18 @@ name: Unity
 "on":
   push:
     branches:
-      - unity/*/*/*/*
+      - main
+    tags-ignore:
+      - v*
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+    if: |-
+      (contains(github.event.head_commit.message, '
+      Dispatch-Trailer: {"type":"unity"'))
     timeout-minutes: 15
     steps:
       - name: Checkout code
@@ -23,6 +28,35 @@ jobs:
         run: touch -t 202211302355 $(find * -type d)
       - name: Restore git file modification times
         uses: chetan/git-restore-mtime-action@075f9bc9d159805603419d50f794bd9f33252ebe
+      - id: DispatchTrailer
+        name: Try to extract Dispatch-Trailer
+        run: |-
+          x="$(git log -1 --pretty='%(trailers:key=Dispatch-Trailer,valueonly)')"
+          if [[ "$x" == "" ]]
+          then
+              x=null
+          fi
+          echo "x is $x"
+          echo "value<<EOD" >> $GITHUB_OUTPUT
+          echo "$x" >> $GITHUB_OUTPUT
+          echo "EOD" >> $GITHUB_OUTPUT
+      - if: |-
+          ((github.ref == 'refs/heads/main') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"')))) && (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))
+        name: Check we don't have Dispatch-Trailer on a protected branch
+        run: |-
+          echo "github.event.head_commit.message contains Dispatch-Trailer"
+          echo "github.event.head_commit.message value"
+          cat <<EOD
+          ${{ github.event.head_commit.message }}
+          EOD
+          echo "containsDispatchTrailer expression"
+          cat <<EOD
+          (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"'))
+          EOD
+          false
       - name: Install Go
         uses: actions/setup-go@v4
         with:
@@ -45,15 +79,6 @@ jobs:
         run: ./_scripts/installUnity.sh
       - name: Run unity
         run: |-
-          # GITHUB_REF is in the form of:
-          # "refs/heads/unity/$change_id/$commit/$cl_number/$ps_number".
-          # When a user runs "cueckoo runtrybot", it triggers a
-          # repository dispatch on the main unity repository,
-          # which then pushes the branch unity/... to the
-          # cue-trybot repository, triggering the workflow here.
-          # The commit (the third element) is enough to do a git fetch.
-          commit=$(echo $GITHUB_REF | cut -d "/" -f 5)
-
           dir_head=$PWD/checkout_head
           dir_parent=$PWD/checkout_parent
 
@@ -63,7 +88,7 @@ jobs:
           mkdir $dir_head
           cd $dir_head
           git init
-          git fetch --depth=2 https://review.gerrithub.io/cue-lang/cue ${commit}
+          git fetch --depth=2 https://review.gerrithub.io/cue-lang/cue ${{ fromJSON(steps.DispatchTrailer.outputs.value).ref }}
           cp -r $dir_head $dir_parent
 
           # Switch into the HEAD commit and show it.
