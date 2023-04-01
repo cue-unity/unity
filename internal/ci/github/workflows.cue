@@ -41,13 +41,19 @@ workflows: close({
 
 	_repo.trybotWorkflows
 
-	trybot:             _linuxWorkflow
+	(_repo.trybot.key): _linuxWorkflow
+	trybot_dispatch: #dummyDispatch: dummyDispatch
 	daily_check:        _linuxWorkflow
-	unity:              _linuxWorkflow
+	(_repo.unity.key):  _linuxWorkflow
 	unity_dispatch:     _linuxWorkflow
 	unity_cli_dispatch: _linuxWorkflow
 })
 
 _linuxWorkflow: {
 	jobs: [string]: "runs-on": _repo.linuxMachine
+}
+
+dummyDispatch: _repo.#dispatch & {
+	type: _repo.trybot.key
+	CL:   552050
 }
