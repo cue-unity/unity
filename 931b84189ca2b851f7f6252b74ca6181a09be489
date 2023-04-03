@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad055cec_18720e05",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 30
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-04-03T12:14:10Z",
+      "side": 1,
+      "message": "Yeh apologies. This is a sign of how far behind the unity stuff fell. We should not let that happen again.",
+      "parentUuid": "47a4df29_4cad6d9a",
+      "revId": "931b84189ca2b851f7f6252b74ca6181a09be489",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e22a7cb8_f98d067a",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-04-03T10:28:39Z",
       "side": 1,
       "message": "just reminding myself, porcuepine is the right account for unity, right? because cueckoo is the one we use for the cue-lang repos.",
+      "revId": "931b84189ca2b851f7f6252b74ca6181a09be489",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf7d8736_bc8e38f5",
+        "filename": "internal/ci/repo/repo.cue",
+        "patchSetId": 30
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-04-03T12:14:10Z",
+      "side": 1,
+      "message": "Correct.",
+      "parentUuid": "e22a7cb8_f98d067a",
       "revId": "931b84189ca2b851f7f6252b74ca6181a09be489",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
