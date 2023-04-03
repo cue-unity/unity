@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "391e5ee1_5b59de2c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 24
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-04-03T14:13:48Z",
+      "side": 1,
+      "message": "Submitting this with forced-approval because the trybots won\u0027t run on this CL.",
+      "revId": "41c2feda6b5b6716011d7bb2b6adc76b45ae7748",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
