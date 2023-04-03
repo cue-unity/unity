@@ -25,7 +25,7 @@ workflows: unity_cli_dispatch: _repo.bashWorkflow & {
 	on: ["repository_dispatch"]
 	jobs: {
 		test: {
-			if: "${{ github.event.client_payload.type == '\(_repo.unity.key)' && github.event.client_payload.payload.cl == null }}"
+			if: "${{ github.event.client_payload.type == '\(_repo.unity.key)' && github.event.client_payload.payload.versions != null }}"
 			steps: [
 				for v in _checkoutCode {v},
 

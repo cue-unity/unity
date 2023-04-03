@@ -15,6 +15,8 @@
 package github
 
 import (
+	"list"
+
 	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
@@ -26,7 +28,7 @@ workflows: unity: _repo.bashWorkflow & {
 
 	on: {
 		push: {
-			branches: ["unity/*/*/*/*"] // only run on unity build branches
+			branches: list.Concat([[_repo.testDefaultBranch], _repo.protectedBranchPatterns])
 		}
 	}
 
