@@ -20,6 +20,7 @@ import (
 	"tool/file"
 
 	"github.com/cue-unity/unity/internal/ci/base"
+	"github.com/cue-unity/unity/internal/ci/repo"
 	"github.com/cue-unity/unity/internal/ci/github"
 )
 
@@ -62,4 +63,12 @@ command: gen: {
 			}
 		}
 	}
+}
+
+command: gen: codereviewcfg: file.Create & {
+	_dir:     path.FromSlash("../../", path.Unix)
+	filename: path.Join([_dir, "codereview.cfg"], _goos)
+	let res = base.toCodeReviewCfg & {#input: repo.codeReview, _}
+	let donotedit = base.doNotEditMessage & {#generatedBy: "internal/ci/ci_tool.cue", _}
+	contents: "# \(donotedit)\n\n\(res)\n"
 }
