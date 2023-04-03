@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0720f562_a71458e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 23
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-04-03T09:08:48Z",
+      "side": 1,
+      "message": "Marking with a hold so that we can carefully coordinate the \"atomic\" submit of this and relates CLs/PRs.",
+      "revId": "4265327f15c01b5296e89f820bfbe8230600c35e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
