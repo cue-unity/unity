@@ -1,3 +1,6 @@
 package github
 
-dummyDispatch: patchset: 24
+dummyDispatch: {
+    CL:       552211
+    patchset: 2
+}
