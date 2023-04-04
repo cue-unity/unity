@@ -26,12 +26,13 @@ jobs:
         run: |-
           mkdir tmpgit
           cd tmpgit
-          git init
+          git init -b initialbranch
           git config user.name porcuepine
           git config user.email porcuepine@gmail.com
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n porcuepine:${{ secrets.PORCUEPINE_GITHUB_PAT }} | base64)"
           git remote add origin https://review.gerrithub.io/a/cue-unity/unity
           git remote add trybot https://github.com/cue-unity/unity-trybot
+
           git fetch origin "${{ github.ref }}"
 
           success=false
