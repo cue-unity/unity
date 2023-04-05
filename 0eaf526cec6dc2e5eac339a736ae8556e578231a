@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ad6a466_bb6c68b3",
+        "filename": "project.config",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-05T20:31:52Z",
+      "side": 1,
+      "message": "I notice now that the indentation is a bit broken :)",
+      "revId": "0eaf526cec6dc2e5eac339a736ae8556e578231a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
