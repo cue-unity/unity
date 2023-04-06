@@ -16,6 +16,24 @@
       "message": "I notice now that the indentation is a bit broken :)",
       "revId": "0eaf526cec6dc2e5eac339a736ae8556e578231a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "903ddc4c_5e6936d6",
+        "filename": "project.config",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-04-06T04:24:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ad6a466_bb6c68b3",
+      "revId": "0eaf526cec6dc2e5eac339a736ae8556e578231a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
