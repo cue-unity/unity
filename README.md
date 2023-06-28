@@ -1,3 +1,11 @@
+### Deprecated
+
+Please note that this repository is **deprecated** in favor of a [new Unity system](https://cuelabs.dev/unity/),
+which was designed to overcome limitations of the approach in this repository such as not supporting private projects
+or not being able to test multiple major versions of CUE simultaneously.
+
+For any updates, subscribe to the [CUE Unity announcements](https://github.com/cue-lang/cue/discussions/2427) thread.
+
 ### `unity` - run experiments/regression tests on CUE modules
 
 `unity` is a tool used to run experiments/regression tests on various CUE modules using different versions of CUE.  The
